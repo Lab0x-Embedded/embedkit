@@ -9,8 +9,6 @@
 
 ![EmbedKit 首页](./public/preview.png)
 
-[工具清单](#工具清单) · [技术栈](#技术栈) · [本地开发](#本地开发) · [部署](#部署vercel) · [目录结构](#目录结构) · [约定](#约定) · [路线图](#路线图)
-
 ## 工具清单
 
 七个工具全部可用，首页没有灰色占位卡。
@@ -30,18 +28,9 @@
 
 ## 技术栈
 
-Next.js 16（App Router / Turbopack）· React 19 · TypeScript ·
-Tailwind CSS v4 · shadcn/ui（radix-nova 预设）· next-intl（中英双语）·
-@wrksz/themes · Vitest（纯函数 + happy-dom 组件测试）· pnpm · ESLint（@antfu/eslint-config）
-
-**依赖原则：能用成熟库就不自己写。** 目前这样用起来的：
-
-| 库 / 能力 | 用在哪 | 为什么不用自己写 |
-| --- | --- | --- |
-| [`js-crc`](https://github.com/emn178/js-crc) | CRC 计算器、Modbus CRC16 | 模型目录直接生成自 reveng CRC catalogue，187 个模型的参数由库维护 |
-| `ansi_up` | 串口日志的 ANSI 颜色 | 转义序列解析的边界情况远比想象多 |
-| Web Crypto | OneNET HMAC 签名 | 浏览器原生，不引 `crypto-js` |
-| BigInt | 进制转换、位域运算 | 语言原生任意精度，不会踩 32 位位运算的符号位坑 |
+Next.js 16（App Router / Turbopack）· React 19 · TypeScript · Tailwind CSS v4 ·
+shadcn/ui（radix-nova 预设）· next-intl（中英双语）· @wrksz/themes ·
+js-crc（CRC 模型目录）· Vitest · pnpm
 
 ## 本地开发
 
@@ -50,125 +39,27 @@ pnpm install
 pnpm dev            # http://localhost:3000 → 自动跳 /zh
 ```
 
-质量闸门（提交前跑齐四条）：
+提交前跑齐四条（CI 也是这四条）：
 
 ```bash
-pnpm lint           # eslint
-pnpm typecheck      # tsc --noEmit
-pnpm test           # vitest：14 个文件 / 290+ 用例（lib/core 纯函数 + components 组件测试）
-pnpm build          # next build，产出静态页
+pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
-
-CI（`.github/workflows/ci.yml`）在每次 push / PR 上跑同样这四条。
-
-### ⚠️ 两个本地开发的坑
-
-**1. `localhost:3000` 是共享 origin，别的项目留下的 Service Worker 会劫持它。**
-
-如果你在别的项目里用过 3000 端口，那个项目注册的 SW 会继续拦截 EmbedKit 的请求、
-从缓存里喂旧的 JS chunk，浏览器里表现成 `chunk.reason.enqueueModel is not a function`
-这类 RSC 报错（**curl 看不出来，只有浏览器里会犯**）。排查：
-
-```
-F12 → Application → Service Workers → 找到 localhost:3000 → Unregister
-    → Storage → Clear site data → Cmd+Shift+R
-```
-
-一劳永逸的办法是给每个项目固定的、不重叠的端口，或者用不同 hostname
-（`embedkit.localhost:3000` 与 `pinatlas.localhost:3000` 算不同 origin）。
-
-**2. `pnpm dev` 和 `pnpm build` 别同时跑**（两者共用 `.next/`）。
-真要同时验证，先停 dev；出现莫名其妙的构建报错就 `rm -rf .next` 重来。
 
 ## 部署（Vercel）
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FLab0x-Embedded%2Fembedkit)
 
-**当前线上：<https://embedkit.ryanuo.cc>**，由 `main` 分支自动部署。
+普通 Next.js 应用：**没有环境变量、没有数据库、没有后端**，点上面的按钮直接部署，不用改任何配置。
 
-项目是普通 Next.js 应用：**没有环境变量、没有数据库、没有后端**，不需要任何额外配置。
+部署已有仓库：打开 <https://vercel.com/new> 选 `Lab0x-Embedded/embedkit`，Framework Preset 会自动识别成
+Next.js，Root Directory / Build Command / Output Directory 全部保持默认。之后 `git push origin main` 触发生产部署。
 
-- **一键部署**：点上面的按钮，Vercel 会把仓库克隆到你的账号并直接部署，全程不用改任何配置。
-- **部署已有仓库**：打开 <https://vercel.com/new> 选 `Lab0x-Embedded/embedkit`，
-  Framework Preset 自动识别成 Next.js，Root Directory / Build Command / Output Directory 全部保持默认。
+绑定自定义域名：Vercel 项目 → Settings → Domains 添加域名 → DNS 加一条 CNAME 指向 `cname.vercel-dns.com`。
 
-之后 `git push origin main` 触发生产部署，PR 会拿到独立的 Preview 域名。
+## 参与开发
 
-绑定自定义域名（当前已绑 `embedkit.ryanuo.cc`）：
-
-1. Vercel 项目 → Settings → Domains → 添加 `embedkit.ryanuo.cc`；
-2. 在域名的 DNS 服务商加一条 CNAME：`embedkit` → `cname.vercel-dns.com`；
-3. 等 Vercel 显示 Valid Configuration（第一次签发证书通常几分钟）。
-
-换域名时改这两处：
-
-| 文件 | 用途 |
-| --- | --- |
-| `lib/site.ts` | `SITE_URL`：canonical / hreflang / sitemap / robots 的绝对地址 |
-| `components/layout/site-header.tsx` | 页头 GitHub 链接 |
-
-部署后自检：`/sitemap.xml`、`/robots.txt`，以及随便一个不存在的路径（应当看到站内的 404 页而不是 Vercel 的默认页）。
-
-> 串口监视器是纯前端 Web Serial，**部署在 Vercel 上照样能用** —— 数据不经过服务器。
-> 限制只来自浏览器：需要桌面版 Chrome / Edge，且必须 https 或 localhost。
-
-## 目录结构
-
-```
-app/
-  sitemap.ts / robots.ts     SEO 产物，从 tools-meta 派生
-  global-error.tsx           根布局级别的兜底错误页
-  global-not-found.tsx       没匹配到路由的 404（根布局在 [locale] 里，只能用它）
-  [locale]/                  页面（Server Component，只做取文案与布局）
-    page.tsx                 首页：分类 + 工具卡片（含禁用态）
-    not-found.tsx            代码里 notFound() 抛出的 404（保留页头页脚与主题）
-    error.tsx                工具页错误边界（重试）
-    tools/<slug>/page.tsx    工具页：取文案 + <ToolShell> + 交互组件
-components/
-  ui/                        shadcn 生成的原语
-  layout/                    页头 / 页脚 / 语言切换 / 主题切换
-  tools/tool-shell.tsx       所有工具页共用的标题外壳
-  tools/<slug>/              工具的交互壳（'use client'，只做状态与渲染）
-lib/
-  site.ts                    站点绝对地址与 canonical / hreflang 生成
-  tools-meta.ts              工具清单单一数据源（首页、分类、卡片、sitemap 全由它派生）
-  tools-text.ts              按 slug 取工具文案
-  i18n.test.ts               文案一致性校验（键对齐、占位符、ICU 可解析、与工具清单对齐）
-  core/*.ts                  工具算法：纯函数 + 同名单测
-  browser/*.ts               浏览器 API 封装（Web Serial、localStorage），只在客户端跑
-i18n/                        next-intl 路由 / 请求配置
-messages/{zh,en}.json        文案
-public/preview.png           README 里的首页预览图
-```
-
-## 约定
-
-1. **算法与 UI 分离**：`lib/core/*.ts` 不许 import React、不许碰 DOM，全部可单测；
-   UI 只负责状态、渲染和复制。
-2. **加一个工具 = 五处改动**：`lib/tools-meta.ts` 加一条（`status: 'done'`）→
-   `messages/{zh,en}.json` 的 `Tools.<slug>` 加 name / desc → `lib/core/<name>.ts` + 单测 →
-   `components/tools/<slug>/` → `app/[locale]/tools/<slug>/page.tsx`（照抄现有页面，套 `ToolShell`）。
-   `lib/i18n.test.ts` 会强制前两步对齐，漏了直接红。
-3. **不做假入口**：还没实现的工具在首页标 `status: 'planned'`，渲染成灰色禁用卡并标注「规划中」，
-   而不是给一个点了报错的按钮；只有 `'done'` 才会进 sitemap。
-4. **纯本地计算**：工具页不发任何请求；敏感输入（密钥等）只留在内存里。
-5. **文案进 messages**：组件里不写死中英文；测试也从 `messages/zh.json` 取断言值，
-   改文案不会让测试变红。文案里要写字面量花括号（比如 C 代码片段）会被 ICU 当成占位符，
-   `lib/i18n.test.ts` 会把这种错误变成红灯。
-
-## 路线图
-
-已上线（7 个）：
-
-- v0.1 **进制转换** —— 骨架：i18n、设计系统、纯函数 + 单测
-- v0.2 **HEX ↔ ASCII / C 数组**、**CRC 计算器**、**位域 / 寄存器可视化**
-- v0.3 **OneNET MQTT 三元组**、**Modbus 报文生成与校验**
-- v0.4 **串口监视器**（Web Serial，Chromium 桌面）
-
-下一步候选：IEEE 754 浮点解析、STM32 定时器 / 波特率计算、校验和工厂（累加和 / XOR / BCC / LRC）、
-CAN 报文位域解析、自定义协议帧构建器、AT 指令速查。
-
-明确不做（需要后端 / 长连接 / 实机）：逻辑分析仪、在线 MQTT 客户端、Modbus 实机主站。
+目录结构、代码约定、本地开发的坑（其中一个是会伪装成 RSC 报错的 Service Worker 冲突）、
+当前进度与后续计划，都在 [`.claude/skills/embedkit-dev/SKILL.md`](./.claude/skills/embedkit-dev/SKILL.md)。
 
 ## License
 
