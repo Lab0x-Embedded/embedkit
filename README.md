@@ -5,8 +5,6 @@
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FLab0x-Embedded%2Fembedkit)
 
-**线上地址** <https://embedkit.ryanuo.cc> · **仓库** <https://github.com/Lab0x-Embedded/embedkit>
-
 ![EmbedKit 首页](./public/preview.png)
 
 ## 工具清单
