@@ -20,7 +20,12 @@ export interface ToolMeta {
   category: CategoryId
   status: ToolStatus
   icon: LucideIcon
-  /** 需要本机串口 / 硬件，部署到 Vercel 也跑不了，只做提示 */
+  /**
+   * 依赖「本机浏览器 + 硬件」这类本地能力（Web Serial 等）。
+   *
+   * 不影响 Vercel 部署（这些 API 本来就在客户端跑），但只有桌面版
+   * Chrome / Edge 在 https 或 localhost 下才有，所以首页卡片要给提示。
+   */
   needsLocalRuntime?: boolean
 }
 
@@ -37,7 +42,7 @@ export const tools: ToolMeta[] = [
   { slug: 'bitfield', category: 'calc', status: 'planned', icon: Cpu },
   { slug: 'hex-ascii', category: 'bytes', status: 'planned', icon: Code },
   { slug: 'modbus-frame', category: 'proto', status: 'planned', icon: Plug },
-  { slug: 'serial', category: 'proto', status: 'done', icon: Radio },
+  { slug: 'serial', category: 'proto', status: 'done', icon: Radio, needsLocalRuntime: true },
   { slug: 'onenet-mqtt', category: 'cloud', status: 'done', icon: Cloud },
 ]
 

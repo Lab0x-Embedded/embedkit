@@ -1,10 +1,25 @@
+import type { Metadata } from 'next'
 import { hasLocale } from 'next-intl'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { ToolCard } from '@/components/tools/tool-card'
 import { Badge } from '@/components/ui/badge'
 import { routing } from '@/i18n/routing'
+import { pageAlternates } from '@/lib/site'
 import { categories, countByStatus, getToolsByCategory } from '@/lib/tools-meta'
+
+/** 首页自己的 canonical 与 hreflang（title / description 由 layout 的默认值兜底） */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  if (!hasLocale(routing.locales, locale))
+    notFound()
+
+  return { alternates: pageAlternates(locale) }
+}
 
 export default async function HomePage({
   params,

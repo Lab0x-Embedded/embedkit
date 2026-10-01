@@ -1,5 +1,5 @@
 import type { ToolMeta } from '@/lib/tools-meta'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Usb } from 'lucide-react'
 import { useMessages, useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Link } from '@/i18n/navigation'
@@ -46,6 +46,13 @@ export function ToolCard({ tool }: { tool: ToolMeta }) {
       <p className="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground">
         {text.desc}
       </p>
+
+      {tool.needsLocalRuntime && (
+        <span className="mt-3 inline-flex items-center gap-1 text-xs text-muted-foreground">
+          <Usb className="size-3.5" />
+          {t('localRuntimeHint')}
+        </span>
+      )}
 
       {available && (
         <span className="mt-4 inline-flex items-center gap-1 text-sm text-foreground/80">

@@ -3,7 +3,9 @@
 面向嵌入式开发的在线工具集：寄存器位域、字节流、校验算法、协议帧、云平台参数。
 **所有计算都在浏览器本地完成，输入内容不上传服务器。**
 
-[English](#english) · [技术栈](#技术栈) · [本地开发](#本地开发) · [约定](#约定) · [路线图](#路线图)
+线上地址：<https://embedkit.ryanuo.cc> · 仓库：<https://github.com/Lab0x-Embedded/embedkit>
+
+[English](#english) · [技术栈](#技术栈) · [本地开发](#本地开发) · [部署](#部署vercel) · [约定](#约定) · [路线图](#路线图)
 
 ## 工具清单
 
@@ -44,33 +46,79 @@ pnpm test           # vitest（lib/core 纯函数 + components 组件测试）
 pnpm build          # next build，产出静态页
 ```
 
+CI（`.github/workflows/ci.yml`）在每次 push / PR 上跑同样这四条。
+
+## 部署（Vercel）
+
+**当前线上：<https://embedkit.ryanuo.cc>**，由 `main` 分支自动部署。
+
+项目是普通 Next.js 应用：**没有环境变量、没有数据库、没有后端**，不需要任何额外配置。
+
+首次导入（已完成，换机器或重建时照做）：
+
+1. 打开 <https://vercel.com/new>，用 GitHub 登录；
+2. 选 `Lab0x-Embedded/embedkit`，Framework Preset 会自动识别成 Next.js；
+3. 直接 Deploy —— Root Directory、Build Command、Output Directory 全部保持默认。
+
+之后 `git push origin main` 就会触发生产部署，PR 会拿到独立的 Preview 域名。
+
+绑定自定义域名（当前已绑 `embedkit.ryanuo.cc`）：
+
+1. Vercel 项目 → Settings → Domains → 添加 `embedkit.ryanuo.cc`；
+2. 在域名的 DNS 服务商加一条 CNAME：`embedkit` → `cname.vercel-dns.com`；
+3. 等 Vercel 显示 Valid Configuration（第一次签发证书通常几分钟）。
+
+两个和部署相关的常量（换域名时改这两处）：
+
+| 文件 | 用途 |
+| --- | --- |
+| `lib/site.ts` | `SITE_URL`：canonical / hreflang / sitemap / robots 的绝对地址 |
+| `components/layout/site-header.tsx` | 页头 GitHub 链接 |
+
+自检：部署完成后访问 `/sitemap.xml`、`/robots.txt`，以及随便一个不存在的路径（应当看到站内的 404 页而不是 Vercel 的默认页）。
+
+> 串口监视器是纯前端 Web Serial，**部署在 Vercel 上照样能用** —— 数据不经过服务器。
+> 限制只来自浏览器：需要桌面版 Chrome / Edge，且必须 https 或 localhost。
+
 ## 目录结构
 
 ```
-app/[locale]/               页面（Server Component，只做取文案与布局）
-  page.tsx                  首页：分类 + 工具卡片（含禁用态）
-  tools/<slug>/page.tsx     工具页外壳
+app/
+  sitemap.ts / robots.ts     SEO 产物，从 tools-meta 派生
+  global-error.tsx           根布局级别的兜底错误页
+  [locale]/                  页面（Server Component，只做取文案与布局）
+    page.tsx                 首页：分类 + 工具卡片（含禁用态）
+    not-found.tsx            站内 404（保留页头页脚与主题）
+    error.tsx                工具页错误边界（重试）
+    tools/<slug>/page.tsx    工具页：取文案 + <ToolShell> + 交互组件
 components/
-  ui/                       shadcn 生成的原语
-  layout/                   页头 / 页脚 / 语言切换 / 主题切换
-  tools/<slug>/             工具的交互壳（'use client'，只做状态与渲染）
+  ui/                        shadcn 生成的原语
+  layout/                    页头 / 页脚 / 语言切换 / 主题切换
+  tools/tool-shell.tsx       所有工具页共用的标题外壳
+  tools/<slug>/              工具的交互壳（'use client'，只做状态与渲染）
 lib/
-  tools-meta.ts             工具清单单一数据源（首页、分类、卡片全由它派生）
-  core/*.ts                 工具算法：纯函数 + 同名单测
-  browser/*.ts              浏览器 API 封装（Web Serial、localStorage），只在客户端跑
-i18n/                       next-intl 路由 / 请求配置
-messages/{zh,en}.json       文案
+  site.ts                    站点绝对地址与 canonical / hreflang 生成
+  tools-meta.ts              工具清单单一数据源（首页、分类、卡片、sitemap 全由它派生）
+  tools-text.ts              按 slug 取工具文案
+  core/*.ts                  工具算法：纯函数 + 同名单测
+  browser/*.ts               浏览器 API 封装（Web Serial、localStorage），只在客户端跑
+i18n/                        next-intl 路由 / 请求配置
+messages/{zh,en}.json        文案
 ```
 
 ## 约定
 
 1. **算法与 UI 分离**：`lib/core/*.ts` 不许 import React、不许碰 DOM，全部可单测；
    UI 只负责状态、渲染和复制。
-2. **加一个工具 = 四处改动**：`lib/tools-meta.ts` 加一条 → `messages/*.json` 加文案 →
-   `lib/core/<name>.ts` + 单测 → `components/tools/<slug>/` + `app/[locale]/tools/<slug>/page.tsx`。
+2. **加一个工具 = 五处改动**：`lib/tools-meta.ts` 加一条（`status: 'done'`）→
+   `messages/{zh,en}.json` 的 `Tools.<slug>` 加 name / desc → `lib/core/<name>.ts` + 单测 →
+   `components/tools/<slug>/` → `app/[locale]/tools/<slug>/page.tsx`（照抄现有页面，套 `ToolShell`）。
+   `lib/i18n.test.ts` 会强制前两步对齐，漏了直接红。
 3. **不做假入口**：没实现的工具在首页保持灰色禁用卡片并标注「规划中」，
-   而不是给一个点了报错的按钮。
+   而不是给一个点了报错的按钮。`status: 'done'` 才会进 sitemap。
 4. **纯本地计算**：工具页不发任何请求；敏感输入（密钥等）只留在内存里。
+5. **文案进 messages**：组件里不写死中英文；测试也从 `messages/zh.json` 取断言值，
+   改文案不会让测试变红。
 
 ## 路线图
 
@@ -104,8 +152,12 @@ Available today: base converter, **Web Serial monitor** (needs desktop Chrome/Ed
 over https or localhost — ports are only opened after you authorise them), and
 OneNET MQTT credential generator.
 
-Deploy: import this repo on Vercel — it is a plain Next.js app, no environment
-variables and no backend required.
+Deploy: **live at <https://embedkit.ryanuo.cc>**, auto-deployed from `main` on Vercel.
+It is a plain Next.js app — no environment variables, no database, no backend. Import
+the repo at <https://vercel.com/new> and accept the defaults; every push to `main`
+ships to production. The custom domain is a CNAME to `cname.vercel-dns.com`. If you
+move to another domain, update `SITE_URL` in `lib/site.ts` (it feeds canonical URLs,
+hreflang, `sitemap.xml` and `robots.txt`).
 
 ## License
 

@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
-import { ArrowLeft } from 'lucide-react'
 import { hasLocale } from 'next-intl'
-import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server'
+import { getMessages, setRequestLocale } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { BaseConverter } from '@/components/tools/base-converter/base-converter'
-import { Link } from '@/i18n/navigation'
+import { ToolShell } from '@/components/tools/tool-shell'
 import { routing } from '@/i18n/routing'
+import { pageAlternates } from '@/lib/site'
 import { getToolText } from '@/lib/tools-text'
 
 const SLUG = 'base-converter'
@@ -21,7 +21,11 @@ export async function generateMetadata({
 
   const text = getToolText(await getMessages({ locale }), SLUG)
 
-  return { title: text.name, description: text.desc }
+  return {
+    title: text.name,
+    description: text.desc,
+    alternates: pageAlternates(locale, `/tools/${SLUG}`),
+  }
 }
 
 export default async function BaseConverterPage({
@@ -35,28 +39,11 @@ export default async function BaseConverterPage({
 
   setRequestLocale(locale)
 
-  const t = await getTranslations()
   const text = getToolText(await getMessages({ locale }), SLUG)
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-3">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" />
-          {t('Nav.home')}
-        </Link>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          {text.name}
-        </h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          {text.desc}
-        </p>
-      </div>
-
+    <ToolShell text={text}>
       <BaseConverter />
-    </div>
+    </ToolShell>
   )
 }

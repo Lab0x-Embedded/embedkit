@@ -8,6 +8,14 @@ import { DEFAULT_SERIAL_STATE } from '@/lib/core/serial-store'
 import messages from '@/messages/zh.json'
 import { SerialMonitor } from './serial-monitor'
 
+/**
+ * 断言用的文案全部从 messages 里取。
+ *
+ * 以前这里写死了「复用已授权端口」这类中文字面量，改一个字的文案就红一片 ——
+ * 文案本来就不是测试要保护的东西，键和 UI 的对应关系才是。
+ */
+const t = messages.Serial
+
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }))
@@ -100,9 +108,9 @@ function renderMonitor() {
 const bodyText = () => (document.body.textContent ?? '').replace(/\s+/g, ' ')
 
 async function openPort() {
-  fireEvent.click(screen.getByRole('button', { name: '复用已授权端口' }))
-  fireEvent.click(await screen.findByRole('button', { name: '打开串口' }))
-  await screen.findByText('已连接')
+  fireEvent.click(screen.getByRole('button', { name: t.reusePort }))
+  fireEvent.click(await screen.findByRole('button', { name: t.open }))
+  await screen.findByText(t.statusOpen)
 }
 
 beforeEach(() => {
@@ -121,18 +129,18 @@ afterEach(() => {
 describe('serialMonitor · 浏览器支持', () => {
   it('不支持 Web Serial 时给出提示并禁用控件', () => {
     renderMonitor()
-    expect(bodyText()).toContain('当前浏览器不支持 Web Serial')
-    expect(isDisabled(screen.getByRole('button', { name: '选择串口' }))).toBe(true)
-    expect(isDisabled(screen.getByRole('button', { name: '复用已授权端口' }))).toBe(true)
+    expect(bodyText()).toContain(t.unsupported)
+    expect(isDisabled(screen.getByRole('button', { name: t.selectPort }))).toBe(true)
+    expect(isDisabled(screen.getByRole('button', { name: t.reusePort }))).toBe(true)
   })
 
   it('支持时不再显示提示，没选端口则不能打开', () => {
     installSerial([port])
     renderMonitor()
-    expect(bodyText()).not.toContain('当前浏览器不支持 Web Serial')
-    expect(isDisabled(screen.getByRole('button', { name: '选择串口' }))).toBe(false)
-    expect(isDisabled(screen.getByRole('button', { name: '打开串口' }))).toBe(true)
-    expect(bodyText()).toContain('未选择端口')
+    expect(bodyText()).not.toContain(t.unsupported)
+    expect(isDisabled(screen.getByRole('button', { name: t.selectPort }))).toBe(false)
+    expect(isDisabled(screen.getByRole('button', { name: t.open }))).toBe(true)
+    expect(bodyText()).toContain(t.noPort)
   })
 })
 
@@ -141,13 +149,13 @@ describe('serialMonitor · 连接与收发', () => {
     installSerial([port])
     renderMonitor()
 
-    fireEvent.click(screen.getByRole('button', { name: '复用已授权端口' }))
+    fireEvent.click(screen.getByRole('button', { name: t.reusePort }))
     expect(await screen.findByText('USB 1A86:7523')).toBeTruthy()
 
-    fireEvent.click(await screen.findByRole('button', { name: '打开串口' }))
-    await screen.findByText('已连接')
+    fireEvent.click(await screen.findByRole('button', { name: t.open }))
+    await screen.findByText(t.statusOpen)
     expect(port.opened).toBe(true)
-    expect(bodyText()).toContain('关闭串口')
+    expect(bodyText()).toContain(t.close)
   })
 
   it('文本发送写入 UTF-8 字节，勾了 CRLF 就补 0D 0A', async () => {
@@ -156,13 +164,13 @@ describe('serialMonitor · 连接与收发', () => {
     renderMonitor()
     await openPort()
 
-    fireEvent.change(screen.getByPlaceholderText('要发送的文本，例如 AT+GMR'), { target: { value: 'AT+GMR' } })
-    fireEvent.click(screen.getByRole('button', { name: '发送' }))
+    fireEvent.change(screen.getByPlaceholderText(t.sendTextPlaceholder), { target: { value: 'AT+GMR' } })
+    fireEvent.click(screen.getByRole('button', { name: t.sendButton }))
 
     await vi.waitFor(() => expect(port.written).toHaveLength(1))
     expect(port.hexWrites[0]).toBe('41 54 2B 47 4D 52 0D 0A')
     // 统计要等这一轮渲染落地
-    await vi.waitFor(() => expect(bodyText()).toContain('发 8 B'))
+    await vi.waitFor(() => expect(bodyText()).toContain(`${t.sent} 8 B`))
   })
 
   it('hex 发送非法内容只报错、不写端口', async () => {
@@ -171,10 +179,10 @@ describe('serialMonitor · 连接与收发', () => {
     renderMonitor()
     await openPort()
 
-    fireEvent.change(screen.getByPlaceholderText('要发送的字节，例如 01 03 00 00 00 0A'), { target: { value: 'ABC' } })
-    fireEvent.click(screen.getByRole('button', { name: '发送' }))
+    fireEvent.change(screen.getByPlaceholderText(t.sendHexPlaceholder), { target: { value: 'ABC' } })
+    fireEvent.click(screen.getByRole('button', { name: t.sendButton }))
 
-    await vi.waitFor(() => expect(toast.error).toHaveBeenCalledWith('HEX 长度是奇数，一个字节要两位'))
+    await vi.waitFor(() => expect(toast.error).toHaveBeenCalledWith(t.error.oddLength))
     expect(port.written).toHaveLength(0)
   })
 
@@ -186,7 +194,7 @@ describe('serialMonitor · 连接与收发', () => {
 
     port.emit([0xAA, 0xBB])
     expect(await screen.findByText('AA BB')).toBeTruthy()
-    expect(bodyText()).toContain('收 2 B')
+    expect(bodyText()).toContain(`${t.received} 2 B`)
   })
 
   it('文本模式下中文按 UTF-8 正确显示', async () => {
@@ -233,7 +241,7 @@ describe('serialMonitor · 连接与收发', () => {
     await openPort()
 
     port.end()
-    await screen.findByText('已断开')
+    await screen.findByText(t.statusClosed)
   })
 })
 
@@ -242,7 +250,7 @@ describe('serialMonitor · 配置留存', () => {
     installSerial([port])
     renderMonitor()
 
-    fireEvent.click(screen.getByRole('button', { name: 'ANSI' }))
+    fireEvent.click(screen.getByRole('button', { name: t.modeAnsi }))
 
     const saved = JSON.parse(window.localStorage.getItem('embedkit.serial.v1') ?? '{}')
     expect(saved.display.mode).toBe('ansi')

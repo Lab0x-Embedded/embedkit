@@ -20,6 +20,7 @@
     "openTool": "Open tool",
     "statusDone": "Ready",
     "statusPlanned": "Planned",
+    "localRuntimeHint": "Needs local browser hardware access",
     "privacyNote": "All computation happens in your browser. Nothing you type is uploaded."
   },
   "Categories": {
@@ -260,5 +261,17 @@
   },
   "Footer": {
     "note": "Client-side only, nothing is uploaded. MIT License."
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "desc": "There is no tool page at this address. The link may be wrong, or the tool is not built yet.",
+    "home": "Back to home"
+  },
+  "Error": {
+    "title": "This tool hit an error",
+    "desc": "The page threw an exception in your browser. Try again first; if it keeps failing, reload the page.",
+    "retry": "Try again",
+    "home": "Back to home",
+    "digest": "Error ID"
   }
 }

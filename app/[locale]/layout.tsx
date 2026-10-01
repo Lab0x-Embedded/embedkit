@@ -10,6 +10,7 @@ import { SiteHeader } from '@/components/layout/site-header'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { routing } from '@/i18n/routing'
+import { SITE_URL } from '@/lib/site'
 import '../globals.css'
 
 const geistSans = Geist({ subsets: ['latin'], variable: '--font-sans' })
@@ -31,8 +32,19 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: 'Metadata' })
 
   return {
+    // 相对 URL（openGraph / canonical）靠它补成绝对地址
+    metadataBase: new URL(SITE_URL),
     title: { default: t('title'), template: `%s · ${t('siteName')}` },
     description: t('description'),
+    applicationName: t('siteName'),
+    openGraph: {
+      type: 'website',
+      siteName: t('siteName'),
+      title: t('title'),
+      description: t('description'),
+      locale: locale === 'zh' ? 'zh_CN' : 'en_US',
+    },
+    twitter: { card: 'summary' },
   }
 }
 

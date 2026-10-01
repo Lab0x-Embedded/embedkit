@@ -20,6 +20,7 @@
     "openTool": "打开工具",
     "statusDone": "可用",
     "statusPlanned": "规划中",
+    "localRuntimeHint": "需要本机浏览器硬件能力",
     "privacyNote": "所有计算在浏览器本地完成，输入内容不上传服务器。"
   },
   "Categories": {
@@ -260,5 +261,17 @@
   },
   "Footer": {
     "note": "纯前端计算，数据不上传。MIT License。"
+  },
+  "NotFound": {
+    "title": "页面不存在",
+    "desc": "这个地址没有对应的工具页。可能是链接写错了，或者工具还没做。",
+    "home": "回到首页"
+  },
+  "Error": {
+    "title": "工具出错了",
+    "desc": "这个页面在浏览器里抛了异常。可以先重试；一直失败就刷新页面。",
+    "retry": "重试",
+    "home": "回到首页",
+    "digest": "错误编号"
   }
 }
