@@ -259,6 +259,52 @@
     "noteInteger": "Integer math uses BigInt, so nothing is lost to floating point; bits above the selected width are truncated.",
     "noteCopy": "Copied values carry no separators — paste them straight into code."
   },
+  "HexAscii": {
+    "lead": "Pick text, HEX or a C array as input — get HEX, text, a paste-ready uint8_t array and a hexdump.",
+    "input": "Input",
+    "inputMode": "Input format",
+    "modeText": "Text",
+    "modeHex": "HEX",
+    "modeCArray": "C array",
+    "placeholder": {
+      "text": "Text to convert, e.g. Hello 温度",
+      "hex": "Bytes to convert, e.g. 48 65 6C 6C 6F",
+      "carray": "Paste a uint8_t array from your C code"
+    },
+    "clear": "Clear",
+    "encoding": "Text encoding",
+    "encodingUtf8": "UTF-8",
+    "encodingLatin1": "Latin-1",
+    "encodingNote": "In UTF-8 a CJK character takes 3 bytes; Latin-1 is one byte per character, handy for inspecting raw bytes.",
+    "separator": "Separator",
+    "separatorSpace": "Space",
+    "separatorNone": "None",
+    "separatorComma": "Comma",
+    "hexOptions": "HEX options",
+    "uppercase": "Uppercase",
+    "arrayName": "Array variable name",
+    "byteCount": "{count} bytes",
+    "result": "Result",
+    "text": "Text",
+    "emptyHint": "Type something — HEX, text and the C array appear as you go.",
+    "cArray": "C array",
+    "cArrayNote": "Paste it straight into C; paste this output back into the C array input to read it again.",
+    "hexdump": "Hexdump",
+    "notes": "Notes",
+    "noteLocal": "Everything is computed locally in your browser — nothing is uploaded.",
+    "noteEncoding": "HEX and the C array always work on bytes; only the text view depends on the encoding.",
+    "noteRoundTrip": "The C array input mode parses const uint8_t x[] = { ... }; and ignores comments.",
+    "noteHexdump": "The hexdump follows the xxd layout: offset + 16 bytes per line + |printable ASCII|.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "error": {
+      "empty": "Enter something first",
+      "oddLength": "HEX length is odd — one byte needs two digits",
+      "badChar": "“{char}” is not a valid hex digit",
+      "badToken": "“{detail}” is not a valid byte",
+      "outOfRange": "“{detail}” does not fit in one byte (0-255)"
+    }
+  },
   "Footer": {
     "note": "Client-side only, nothing is uploaded. MIT License."
   },

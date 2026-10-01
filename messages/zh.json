@@ -259,6 +259,52 @@
     "noteInteger": "整数运算走 BigInt，不会丢精度；超出所选位宽的高位按位宽截断。",
     "noteCopy": "复制出来的值不带分隔符，可直接粘进代码。"
   },
+  "HexAscii": {
+    "lead": "文本 / HEX / C 数组三种输入任选其一，输出 HEX、文本、可粘贴回读的 uint8_t 数组与 hexdump。",
+    "input": "输入",
+    "inputMode": "输入格式",
+    "modeText": "文本",
+    "modeHex": "HEX",
+    "modeCArray": "C 数组",
+    "placeholder": {
+      "text": "要转换的文本，例如 Hello 温度",
+      "hex": "要转换的字节，例如 48 65 6C 6C 6F",
+      "carray": "粘贴 C 代码里的 uint8_t 数组"
+    },
+    "clear": "清空",
+    "encoding": "文本编码",
+    "encodingUtf8": "UTF-8",
+    "encodingLatin1": "Latin-1",
+    "encodingNote": "UTF-8 下一个中文占 3 字节；Latin-1 一个字符就是一个字节，适合对照原始字节。",
+    "separator": "分隔符",
+    "separatorSpace": "空格",
+    "separatorNone": "无",
+    "separatorComma": "逗号",
+    "hexOptions": "HEX 选项",
+    "uppercase": "大写",
+    "arrayName": "数组变量名",
+    "byteCount": "共 {count} 字节",
+    "result": "转换结果",
+    "text": "文本",
+    "emptyHint": "输入内容后，HEX、文本与 C 数组会同步出现。",
+    "cArray": "C 数组",
+    "cArrayNote": "直接粘进 C 代码；把这段输出贴回上面的「C 数组」输入框可以原样读回来。",
+    "hexdump": "HEX 转储",
+    "notes": "说明",
+    "noteLocal": "全部在浏览器本地计算，内容不上传。",
+    "noteEncoding": "HEX 与 C 数组始终按字节处理，只有文本视图受编码影响。",
+    "noteRoundTrip": "C 数组输入模式能解析 const uint8_t x[] = { ... }; 形式的代码，注释会被忽略。",
+    "noteHexdump": "HEX 转储按 xxd 风格排版：偏移 + 每行 16 字节 + |可打印字符|。",
+    "copy": "复制",
+    "copied": "已复制",
+    "error": {
+      "empty": "请输入内容",
+      "oddLength": "HEX 长度是奇数，一个字节要两位",
+      "badChar": "「{char}」不是合法的十六进制字符",
+      "badToken": "「{detail}」不是合法的字节",
+      "outOfRange": "「{detail}」超过了一个字节（0-255）"
+    }
+  },
   "Footer": {
     "note": "纯前端计算，数据不上传。MIT License。"
   },

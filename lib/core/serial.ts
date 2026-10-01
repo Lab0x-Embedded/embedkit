@@ -55,17 +55,21 @@ export interface FormatHexOptions {
   uppercase?: boolean
   /** 默认空格分隔 */
   separator?: string
+  /** 每个字节加 0x 前缀（写 C 代码 / 拼指令时常用） */
+  prefix?: boolean
 }
 
 /** 字节 → HEX 字符串 */
 export function formatHex(bytes: Uint8Array, options: FormatHexOptions = {}): string {
-  const { uppercase = true, separator = ' ' } = options
+  const { uppercase = true, separator = ' ', prefix = false } = options
   const parts: string[] = []
-  for (const byte of bytes)
-    parts.push(byte.toString(16).padStart(2, '0'))
-
-  const text = parts.join(separator)
-  return uppercase ? text.toUpperCase() : text
+  for (const byte of bytes) {
+    const digits = byte.toString(16).padStart(2, '0')
+    // 大小写只作用于数字：0x 前缀本身必须保持小写
+    const cased = uppercase ? digits.toUpperCase() : digits
+    parts.push(prefix ? `0x${cased}` : cased)
+  }
+  return parts.join(separator)
 }
 
 /** 字节 → 文本（UTF-8，非法序列显示为替换字符；二进制数据请看 HEX 模式） */
