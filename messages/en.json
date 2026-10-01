@@ -1,0 +1,100 @@
+{
+  "Metadata": {
+    "siteName": "EmbedKit · Embedded Toolbox",
+    "title": "EmbedKit · Embedded Toolbox",
+    "description": "Online tools for firmware and protocol work: number bases, bitfields, CRC, frame checksums, cloud platform credentials. Everything runs locally in your browser — no data is uploaded."
+  },
+  "Nav": {
+    "home": "Home",
+    "github": "GitHub",
+    "toggleTheme": "Toggle theme",
+    "toggleLanguage": "Switch language",
+    "languageName": "English"
+  },
+  "Home": {
+    "title": "Embedded Toolbox",
+    "intro": "Online tools for MCU, protocol and debugging work: register bitfields, byte streams, checksum algorithms, cloud platform credentials. Pure client-side — your data never leaves the browser.",
+    "available": "{count} available",
+    "planned": "{count} planned",
+    "plannedNote": "Grey cards are not implemented yet. No fake doors — a tool lights up only when it works.",
+    "openTool": "Open tool",
+    "statusDone": "Ready",
+    "statusPlanned": "Planned",
+    "privacyNote": "All computation happens in your browser. Nothing you type is uploaded."
+  },
+  "Categories": {
+    "calc": "Math / Numeric",
+    "bytes": "Byte streams / Encoding",
+    "proto": "Protocols / Comms",
+    "cloud": "Cloud / Config"
+  },
+  "Tools": {
+    "base-converter": {
+      "name": "Number Base Converter",
+      "desc": "Binary / octal / decimal / hex conversion with big integers, two's complement by bit width and byte order views."
+    },
+    "crc": {
+      "name": "CRC Calculator",
+      "desc": "Generic parameter model (poly / init / reflect / xor-out) with presets: CRC-8/16/32, CCITT, Modbus, CAN."
+    },
+    "bitfield": {
+      "name": "Bitfield / Register Viewer",
+      "desc": "Inspect a register bit by bit, toggle / set / clear, and emit HEX plus C macros."
+    },
+    "hex-ascii": {
+      "name": "HEX ↔ ASCII / C array",
+      "desc": "Convert between hex and text, and generate a round-trippable uint8_t array."
+    },
+    "onenet-mqtt": {
+      "name": "OneNET MQTT Credentials",
+      "desc": "Turn product and device info into ClientID / Username / Password signatures and thing-model topics."
+    },
+    "modbus-frame": {
+      "name": "Modbus Frame Builder",
+      "desc": "Build RTU and TCP read/write frames with automatic CRC16 and MBAP header."
+    }
+  },
+  "Radix": {
+    "hex": "Hexadecimal",
+    "dec": "Decimal",
+    "bin": "Binary",
+    "oct": "Octal"
+  },
+  "BaseConverter": {
+    "lead": "Type an integer in any base, get all four bases instantly, plus two's complement and byte order for the selected bit width.",
+    "inputLabel": "Value",
+    "inputPlaceholder": "e.g. 255, 0xFF, 0b1010 1010, 0o777",
+    "clear": "Clear",
+    "sourceRadix": "Source base",
+    "auto": "Auto-detect",
+    "bitWidth": "Bit width",
+    "examples": "Examples",
+    "source": "source",
+    "result": "Result",
+    "copy": "Copy",
+    "copied": "Copied",
+    "emptyHint": "Type a value above — all four bases appear as you type.",
+    "error": {
+      "empty": "Please enter a value",
+      "noDigits": "No digits after the prefix",
+      "badDigit": "'{char}' is not a valid {radix} digit",
+      "prefixMismatch": "The 0{prefix} prefix conflicts with the selected base ({radix})",
+      "invalidFormat": "Malformed number"
+    },
+    "interpret": "Interpretation by bit width",
+    "unsigned": "Unsigned",
+    "signed": "Signed",
+    "signBit": "Sign bit",
+    "signBitSet": "1 (negative)",
+    "signBitClear": "0 (non-negative)",
+    "byteOrder": "Byte order",
+    "bigEndian": "Big endian (BE)",
+    "littleEndian": "Little endian (LE)",
+    "notes": "Notes",
+    "noteInteger": "Integer math uses BigInt, so nothing is lost to floating point; bits above the selected width are truncated.",
+    "noteCopy": "Copied values carry no separators — paste them straight into code."
+  },
+  "Footer": {
+    "note": "Client-side only, nothing is uploaded. MIT License."
+  }
+}

@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# hermes agent plans / scratch (never commit)
+.hermes/
+
+# editors
+.idea/
+.vscode/

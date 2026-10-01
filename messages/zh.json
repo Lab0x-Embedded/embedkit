@@ -1,0 +1,100 @@
+{
+  "Metadata": {
+    "siteName": "EmbedKit 嵌入式工具箱",
+    "title": "EmbedKit · 嵌入式工具箱",
+    "description": "面向单片机与通信协议的在线工具集：进制转换、位域寄存器、CRC、帧校验、云平台参数生成。全部在浏览器本地计算，数据不上传。"
+  },
+  "Nav": {
+    "home": "首页",
+    "github": "GitHub",
+    "toggleTheme": "切换主题",
+    "toggleLanguage": "切换语言",
+    "languageName": "中文"
+  },
+  "Home": {
+    "title": "嵌入式工具箱",
+    "intro": "面向单片机、通信协议与调试链路的在线工具：寄存器位域、字节流、校验算法、云平台参数。纯前端计算，数据不出浏览器。",
+    "available": "{count} 个可用",
+    "planned": "{count} 个规划中",
+    "plannedNote": "灰色卡片是还没实现的工具。不做假入口 —— 做完才点亮。",
+    "openTool": "打开工具",
+    "statusDone": "可用",
+    "statusPlanned": "规划中",
+    "privacyNote": "所有计算在浏览器本地完成，输入内容不上传服务器。"
+  },
+  "Categories": {
+    "calc": "计算 / 数值",
+    "bytes": "字节流 / 编码",
+    "proto": "协议 / 通信",
+    "cloud": "云平台 / 配置"
+  },
+  "Tools": {
+    "base-converter": {
+      "name": "进制转换",
+      "desc": "二进制 / 八进制 / 十进制 / 十六进制互转，支持大数与位宽补码、字节序视图。"
+    },
+    "crc": {
+      "name": "CRC 计算器",
+      "desc": "通用参数模型（多项式 / 初值 / 反转 / 异或输出）与常用预设：CRC-8/16/32、CCITT、Modbus、CAN。"
+    },
+    "bitfield": {
+      "name": "位域 / 寄存器可视化",
+      "desc": "逐位查看寄存器，点击置位 / 清零 / 取反，同步输出 HEX 与 C 宏。"
+    },
+    "hex-ascii": {
+      "name": "HEX ↔ ASCII / C 数组",
+      "desc": "十六进制与文本互转，一键生成可粘贴回读的 uint8_t 数组。"
+    },
+    "onenet-mqtt": {
+      "name": "OneNET MQTT 参数生成",
+      "desc": "输入产品与设备信息，生成 ClientID / Username / Password 签名与物模型 Topic。"
+    },
+    "modbus-frame": {
+      "name": "Modbus 报文生成与校验",
+      "desc": "RTU 与 TCP 读写寄存器 / 线圈报文，自动算 CRC16 与 MBAP 头。"
+    }
+  },
+  "Radix": {
+    "hex": "十六进制",
+    "dec": "十进制",
+    "bin": "二进制",
+    "oct": "八进制"
+  },
+  "BaseConverter": {
+    "lead": "输入任意进制的整数，实时得到四种进制结果，并按位宽解释补码与字节序。",
+    "inputLabel": "输入数值",
+    "inputPlaceholder": "例如 255、0xFF、0b1010 1010、0o777",
+    "clear": "清空",
+    "sourceRadix": "源进制",
+    "auto": "自动识别",
+    "bitWidth": "位宽",
+    "examples": "示例",
+    "source": "源",
+    "result": "转换结果",
+    "copy": "复制",
+    "copied": "已复制",
+    "emptyHint": "输入数值后，四种进制的结果会自动出现。",
+    "error": {
+      "empty": "请输入一个数值",
+      "noDigits": "前缀后面没有数字",
+      "badDigit": "「{char}」不是合法的 {radix} 进制数字",
+      "prefixMismatch": "前缀 0{prefix} 与所选进制（{radix}）不一致",
+      "invalidFormat": "数值格式有误"
+    },
+    "interpret": "按位宽解释",
+    "unsigned": "无符号",
+    "signed": "有符号",
+    "signBit": "符号位",
+    "signBitSet": "1（负数）",
+    "signBitClear": "0（非负）",
+    "byteOrder": "字节序视图",
+    "bigEndian": "大端 BE",
+    "littleEndian": "小端 LE",
+    "notes": "说明",
+    "noteInteger": "整数运算走 BigInt，不会丢精度；超出所选位宽的高位按位宽截断。",
+    "noteCopy": "复制出来的值不带分隔符，可直接粘进代码。"
+  },
+  "Footer": {
+    "note": "纯前端计算，数据不上传。MIT License。"
+  }
+}
