@@ -55,6 +55,16 @@ pnpm build          # next build，产出静态页
 
 CI（`.github/workflows/ci.yml`）在每次 push / PR 上跑同样这四条。
 
+> ⚠️ **`pnpm dev` 和 `pnpm build` 不要同时跑。**
+> 两者共用 `.next/`，`next build` 会覆写 manifest、`BUILD_ID` 和 `static/`。
+> 正在跑的 dev server 不会自动恢复，浏览器里会变成
+> `chunk.reason.enqueueModel is not a function` 这类 RSC 报错，
+> dev 指示器同时显示 **"(stale)"**。要跑 build 就先停 dev；
+> 真踩到了就 `rm -rf .next` 再重启 dev server。
+>
+> 如果重启后还报同样的错，去 DevTools → Application → Service Workers
+> 检查 `localhost:3000` 上有没有别的项目留下的 Service Worker，有就 Unregister。
+
 ## 部署（Vercel）
 
 **当前线上：<https://embedkit.ryanuo.cc>**，由 `main` 分支自动部署。
