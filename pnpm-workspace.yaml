@@ -1,5 +1,15 @@
 minimumReleaseAgeExcludePrune: true
+
 trustPolicy: no-downgrade
+
+# 三个已知误报：pnpm 的 trust-downgrade 检查基于发布日期（见 pnpm/pnpm#10202），
+# 这三个都是 lint / test 工具链的传递依赖（@babel ← shadcn CLI、@types/node、vitest），
+# 不是我们直接引入的。只豁免这三个具体版本，其余依赖仍受策略保护。
+trustPolicyExclude:
+  - semver@6.3.1
+  - undici-types@6.21.0
+  - why-is-node-running@3.2.2
+
 shellEmulator: true
 
 allowBuilds:
