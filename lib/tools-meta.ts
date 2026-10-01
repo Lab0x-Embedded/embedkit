@@ -5,6 +5,7 @@ import {
   Code,
   Cpu,
   Plug,
+  Radio,
   ShieldCheck,
 } from 'lucide-react'
 
@@ -36,6 +37,7 @@ export const tools: ToolMeta[] = [
   { slug: 'bitfield', category: 'calc', status: 'planned', icon: Cpu },
   { slug: 'hex-ascii', category: 'bytes', status: 'planned', icon: Code },
   { slug: 'modbus-frame', category: 'proto', status: 'planned', icon: Plug },
+  { slug: 'serial', category: 'proto', status: 'done', icon: Radio },
   { slug: 'onenet-mqtt', category: 'cloud', status: 'done', icon: Cloud },
 ]
 

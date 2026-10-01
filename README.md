@@ -10,19 +10,23 @@
 | 状态 | 工具 | 说明 |
 | --- | --- | --- |
 | ✅ 可用 | **进制转换** `/tools/base-converter` | 2 / 8 / 10 / 16 互转，BigInt 大数、位宽补码解释、大小端字节序视图 |
+| ✅ 可用 | **串口监视器** `/tools/serial` | 浏览器直连串口（Web Serial）：HEX / 文本 / ANSI 彩色日志、分包合并、定时发送、快捷指令、拔插自动重连 |
+| ✅ 可用 | **OneNET MQTT 参数生成** `/tools/onenet-mqtt` | ClientID / Username / Password 签名、物模型 Topic、ESP-AT 指令序列 |
 | 🚧 规划中 | CRC 计算器 | 通用参数模型（poly / init / refin / refout / xorout）与常用预设 |
 | 🚧 规划中 | 位域 / 寄存器可视化 | 逐位查看、置位 / 清零 / 取反，导出 C 宏 |
 | 🚧 规划中 | HEX ↔ ASCII / C 数组 | 十六进制与文本互转，生成可回读的 `uint8_t` 数组 |
 | 🚧 规划中 | Modbus 报文生成与校验 | RTU（CRC16）与 TCP（MBAP）读写寄存器 / 线圈 |
-| 🚧 规划中 | OneNET MQTT 参数生成 | ClientID / Username / Password 签名与物模型 Topic |
 
 > 规划中的工具在首页是**灰色禁用卡片**，不做假入口 —— 实现可用后才点亮。
+>
+> 串口监视器需要桌面版 Chrome / Edge（Web Serial 不支持 Safari、Firefox），
+> 且必须在 https 或 localhost 下使用。查到的串口只能由你手动授权，页面不会主动打开设备。
 
 ## 技术栈
 
 Next.js 16（App Router / Turbopack）· React 19 · TypeScript ·
 Tailwind CSS v4 · shadcn/ui（radix-nova 预设）· next-intl（中英双语）·
-next-themes · Vitest · pnpm · ESLint（@antfu/eslint-config）
+@wrksz/themes · Vitest（纯函数 + happy-dom 组件测试）· pnpm · ESLint（@antfu/eslint-config）
 
 ## 本地开发
 
@@ -36,7 +40,7 @@ pnpm dev            # http://localhost:3000 → 自动跳 /zh
 ```bash
 pnpm lint           # eslint
 pnpm typecheck      # tsc --noEmit
-pnpm test           # vitest（工具核心纯函数）
+pnpm test           # vitest（lib/core 纯函数 + components 组件测试）
 pnpm build          # next build，产出静态页
 ```
 
@@ -53,6 +57,7 @@ components/
 lib/
   tools-meta.ts             工具清单单一数据源（首页、分类、卡片全由它派生）
   core/*.ts                 工具算法：纯函数 + 同名单测
+  browser/*.ts              浏览器 API 封装（Web Serial、localStorage），只在客户端跑
 i18n/                       next-intl 路由 / 请求配置
 messages/{zh,en}.json       文案
 ```
@@ -69,10 +74,10 @@ messages/{zh,en}.json       文案
 
 ## 路线图
 
-- v0.1 进制转换（骨架已完成：i18n、设计系统、纯函数 + 单测 40 条）
+- v0.1 进制转换（骨架：i18n、设计系统、纯函数 + 单测）
 - v0.2 CRC 计算器、位域 / 寄存器可视化、HEX ↔ ASCII / C 数组
-- v0.3 Modbus 报文、OneNET MQTT 三元组、IEEE 754 浮点解析、STM32 定时器 / 波特率计算
-- v0.4 串口监视器（Web Serial API，Chromium 桌面）、CAN 报文解析
+- v0.3 OneNET MQTT 三元组 ✅、Modbus 报文、IEEE 754 浮点解析、STM32 定时器 / 波特率计算
+- v0.4 串口监视器（Web Serial API，Chromium 桌面）✅、CAN 报文解析
 
 ## English
 
@@ -89,10 +94,15 @@ pnpm install && pnpm dev      # http://localhost:3000/en
 pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
-Conventions: algorithms live in `lib/core/*.ts` as pure functions with unit tests;
-UI components only handle state and rendering. Unimplemented tools are shown as
-grey, disabled cards instead of fake entries. The tool list has a single source of
-truth in `lib/tools-meta.ts`.
+Conventions: algorithms live in `lib/core/*.ts` as pure functions with unit tests
+(components get happy-dom tests with a fake serial port); browser APIs are wrapped
+in `lib/browser/*.ts`. UI components only handle state and rendering. Unimplemented
+tools are shown as grey, disabled cards instead of fake entries. The tool list has a
+single source of truth in `lib/tools-meta.ts`.
+
+Available today: base converter, **Web Serial monitor** (needs desktop Chrome/Edge
+over https or localhost — ports are only opened after you authorise them), and
+OneNET MQTT credential generator.
 
 Deploy: import this repo on Vercel — it is a plain Next.js app, no environment
 variables and no backend required.
