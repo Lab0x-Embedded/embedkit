@@ -1,9 +1,9 @@
 'use client'
 
 import type { ToasterProps } from 'sonner'
+import { useTheme } from '@wrksz/themes/client'
 import { CircleCheckIcon, InfoIcon, Loader2Icon, OctagonXIcon, TriangleAlertIcon } from 'lucide-react'
 import { Toaster as Sonner } from 'sonner'
-import { useTheme } from '@/hooks/use-theme'
 
 function Toaster({ ...props }: ToasterProps) {
   const { theme = 'system' } = useTheme()
