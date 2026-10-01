@@ -40,8 +40,8 @@ export async function generateMetadata({
     openGraph: {
       type: 'website',
       siteName: t('siteName'),
-      title: t('title'),
-      description: t('description'),
+      // 刻意不写 title / description：留空时 Next 会用该页最终解析出来的
+      // title / description 兜底，工具页才会显示「CRC 计算器」而不是站点名。
       locale: locale === 'zh' ? 'zh_CN' : 'en_US',
     },
     twitter: { card: 'summary' },
