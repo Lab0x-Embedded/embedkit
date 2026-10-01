@@ -3,9 +3,13 @@
 面向嵌入式开发的在线工具集：寄存器位域、字节流、校验算法、协议帧、云平台参数。
 **所有计算都在浏览器本地完成，输入内容不上传服务器。**
 
-线上地址：<https://embedkit.ryanuo.cc> · 仓库：<https://github.com/Lab0x-Embedded/embedkit>
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FLab0x-Embedded%2Fembedkit)
 
-[English](#english) · [技术栈](#技术栈) · [本地开发](#本地开发) · [部署](#部署vercel) · [约定](#约定) · [路线图](#路线图)
+**线上地址** <https://embedkit.ryanuo.cc> · **仓库** <https://github.com/Lab0x-Embedded/embedkit>
+
+![EmbedKit 首页](./public/preview.png)
+
+[工具清单](#工具清单) · [技术栈](#技术栈) · [本地开发](#本地开发) · [部署](#部署vercel) · [目录结构](#目录结构) · [约定](#约定) · [路线图](#路线图)
 
 ## 工具清单
 
@@ -21,9 +25,6 @@
 | 协议 / 通信 | **串口监视器** `/tools/serial` | 浏览器直连串口（Web Serial）：HEX / 文本 / ANSI 彩色日志、分包合并、定时发送、快捷指令、拔插自动重连 |
 | 云平台 / 配置 | **OneNET MQTT 参数生成** `/tools/onenet-mqtt` | ClientID / Username / Password 签名、物模型 Topic、ESP-AT 指令序列 |
 
-> 加工具时的规矩：先在 `lib/tools-meta.ts` 里标 `status: 'planned'`（首页显示灰色禁用卡），
-> 实现完再改成 `'done'` —— 不做假入口，`done` 才会进 sitemap。
->
 > 串口监视器需要桌面版 Chrome / Edge（Web Serial 不支持 Safari、Firefox），
 > 且必须在 https 或 localhost 下使用。查到的串口只能由你手动授权，页面不会主动打开设备。
 
@@ -31,11 +32,16 @@
 
 Next.js 16（App Router / Turbopack）· React 19 · TypeScript ·
 Tailwind CSS v4 · shadcn/ui（radix-nova 预设）· next-intl（中英双语）·
-@wrksz/themes · **js-crc**（CRC 模型目录，不自己实现算法）·
-Vitest（纯函数 + happy-dom 组件测试）· pnpm · ESLint（@antfu/eslint-config）
+@wrksz/themes · Vitest（纯函数 + happy-dom 组件测试）· pnpm · ESLint（@antfu/eslint-config）
 
-依赖原则：能用成熟库就不自己写。已经这样用起来的还有 `ansi_up`（串口日志的颜色转义）、
-Web Crypto（OneNET 签名）、BigInt（进制与位运算）。
+**依赖原则：能用成熟库就不自己写。** 目前这样用起来的：
+
+| 库 / 能力 | 用在哪 | 为什么不用自己写 |
+| --- | --- | --- |
+| [`js-crc`](https://github.com/emn178/js-crc) | CRC 计算器、Modbus CRC16 | 模型目录直接生成自 reveng CRC catalogue，187 个模型的参数由库维护 |
+| `ansi_up` | 串口日志的 ANSI 颜色 | 转义序列解析的边界情况远比想象多 |
+| Web Crypto | OneNET HMAC 签名 | 浏览器原生，不引 `crypto-js` |
+| BigInt | 进制转换、位域运算 | 语言原生任意精度，不会踩 32 位位运算的符号位坑 |
 
 ## 本地开发
 
@@ -49,35 +55,44 @@ pnpm dev            # http://localhost:3000 → 自动跳 /zh
 ```bash
 pnpm lint           # eslint
 pnpm typecheck      # tsc --noEmit
-pnpm test           # vitest（lib/core 纯函数 + components 组件测试）
+pnpm test           # vitest：14 个文件 / 290+ 用例（lib/core 纯函数 + components 组件测试）
 pnpm build          # next build，产出静态页
 ```
 
 CI（`.github/workflows/ci.yml`）在每次 push / PR 上跑同样这四条。
 
-> ⚠️ **`pnpm dev` 和 `pnpm build` 不要同时跑。**
-> 两者共用 `.next/`，`next build` 会覆写 manifest、`BUILD_ID` 和 `static/`。
-> 正在跑的 dev server 不会自动恢复，浏览器里会变成
-> `chunk.reason.enqueueModel is not a function` 这类 RSC 报错，
-> dev 指示器同时显示 **"(stale)"**。要跑 build 就先停 dev；
-> 真踩到了就 `rm -rf .next` 再重启 dev server。
->
-> 如果重启后还报同样的错，去 DevTools → Application → Service Workers
-> 检查 `localhost:3000` 上有没有别的项目留下的 Service Worker，有就 Unregister。
+### ⚠️ 两个本地开发的坑
+
+**1. `localhost:3000` 是共享 origin，别的项目留下的 Service Worker 会劫持它。**
+
+如果你在别的项目里用过 3000 端口，那个项目注册的 SW 会继续拦截 EmbedKit 的请求、
+从缓存里喂旧的 JS chunk，浏览器里表现成 `chunk.reason.enqueueModel is not a function`
+这类 RSC 报错（**curl 看不出来，只有浏览器里会犯**）。排查：
+
+```
+F12 → Application → Service Workers → 找到 localhost:3000 → Unregister
+    → Storage → Clear site data → Cmd+Shift+R
+```
+
+一劳永逸的办法是给每个项目固定的、不重叠的端口，或者用不同 hostname
+（`embedkit.localhost:3000` 与 `pinatlas.localhost:3000` 算不同 origin）。
+
+**2. `pnpm dev` 和 `pnpm build` 别同时跑**（两者共用 `.next/`）。
+真要同时验证，先停 dev；出现莫名其妙的构建报错就 `rm -rf .next` 重来。
 
 ## 部署（Vercel）
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FLab0x-Embedded%2Fembedkit)
 
 **当前线上：<https://embedkit.ryanuo.cc>**，由 `main` 分支自动部署。
 
 项目是普通 Next.js 应用：**没有环境变量、没有数据库、没有后端**，不需要任何额外配置。
 
-首次导入（已完成，换机器或重建时照做）：
+- **一键部署**：点上面的按钮，Vercel 会把仓库克隆到你的账号并直接部署，全程不用改任何配置。
+- **部署已有仓库**：打开 <https://vercel.com/new> 选 `Lab0x-Embedded/embedkit`，
+  Framework Preset 自动识别成 Next.js，Root Directory / Build Command / Output Directory 全部保持默认。
 
-1. 打开 <https://vercel.com/new>，用 GitHub 登录；
-2. 选 `Lab0x-Embedded/embedkit`，Framework Preset 会自动识别成 Next.js；
-3. 直接 Deploy —— Root Directory、Build Command、Output Directory 全部保持默认。
-
-之后 `git push origin main` 就会触发生产部署，PR 会拿到独立的 Preview 域名。
+之后 `git push origin main` 触发生产部署，PR 会拿到独立的 Preview 域名。
 
 绑定自定义域名（当前已绑 `embedkit.ryanuo.cc`）：
 
@@ -85,14 +100,14 @@ CI（`.github/workflows/ci.yml`）在每次 push / PR 上跑同样这四条。
 2. 在域名的 DNS 服务商加一条 CNAME：`embedkit` → `cname.vercel-dns.com`；
 3. 等 Vercel 显示 Valid Configuration（第一次签发证书通常几分钟）。
 
-两个和部署相关的常量（换域名时改这两处）：
+换域名时改这两处：
 
 | 文件 | 用途 |
 | --- | --- |
 | `lib/site.ts` | `SITE_URL`：canonical / hreflang / sitemap / robots 的绝对地址 |
 | `components/layout/site-header.tsx` | 页头 GitHub 链接 |
 
-自检：部署完成后访问 `/sitemap.xml`、`/robots.txt`，以及随便一个不存在的路径（应当看到站内的 404 页而不是 Vercel 的默认页）。
+部署后自检：`/sitemap.xml`、`/robots.txt`，以及随便一个不存在的路径（应当看到站内的 404 页而不是 Vercel 的默认页）。
 
 > 串口监视器是纯前端 Web Serial，**部署在 Vercel 上照样能用** —— 数据不经过服务器。
 > 限制只来自浏览器：需要桌面版 Chrome / Edge，且必须 https 或 localhost。
@@ -118,10 +133,12 @@ lib/
   site.ts                    站点绝对地址与 canonical / hreflang 生成
   tools-meta.ts              工具清单单一数据源（首页、分类、卡片、sitemap 全由它派生）
   tools-text.ts              按 slug 取工具文案
+  i18n.test.ts               文案一致性校验（键对齐、占位符、ICU 可解析、与工具清单对齐）
   core/*.ts                  工具算法：纯函数 + 同名单测
   browser/*.ts               浏览器 API 封装（Web Serial、localStorage），只在客户端跑
 i18n/                        next-intl 路由 / 请求配置
 messages/{zh,en}.json        文案
+public/preview.png           README 里的首页预览图
 ```
 
 ## 约定
@@ -132,11 +149,12 @@ messages/{zh,en}.json        文案
    `messages/{zh,en}.json` 的 `Tools.<slug>` 加 name / desc → `lib/core/<name>.ts` + 单测 →
    `components/tools/<slug>/` → `app/[locale]/tools/<slug>/page.tsx`（照抄现有页面，套 `ToolShell`）。
    `lib/i18n.test.ts` 会强制前两步对齐，漏了直接红。
-3. **不做假入口**：没实现的工具在首页保持灰色禁用卡片并标注「规划中」，
-   而不是给一个点了报错的按钮。`status: 'done'` 才会进 sitemap。
+3. **不做假入口**：还没实现的工具在首页标 `status: 'planned'`，渲染成灰色禁用卡并标注「规划中」，
+   而不是给一个点了报错的按钮；只有 `'done'` 才会进 sitemap。
 4. **纯本地计算**：工具页不发任何请求；敏感输入（密钥等）只留在内存里。
 5. **文案进 messages**：组件里不写死中英文；测试也从 `messages/zh.json` 取断言值，
-   改文案不会让测试变红。
+   改文案不会让测试变红。文案里要写字面量花括号（比如 C 代码片段）会被 ICU 当成占位符，
+   `lib/i18n.test.ts` 会把这种错误变成红灯。
 
 ## 路线图
 
@@ -150,44 +168,7 @@ messages/{zh,en}.json        文案
 下一步候选：IEEE 754 浮点解析、STM32 定时器 / 波特率计算、校验和工厂（累加和 / XOR / BCC / LRC）、
 CAN 报文位域解析、自定义协议帧构建器、AT 指令速查。
 
-明确不做（需要后端 / 长连接 / 实机，只在首页留说明）：逻辑分析仪、在线 MQTT 客户端、Modbus 实机主站。
-
-## English
-
-EmbedKit is a collection of online tools for embedded development — register
-bitfields, byte streams, checksum algorithms, protocol frames and cloud platform
-credentials. **Everything is computed locally in your browser; nothing you type is
-uploaded.**
-
-Stack: Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 ·
-shadcn/ui · next-intl (zh / en) · js-crc (CRC model catalogue) · Vitest.
-
-```bash
-pnpm install && pnpm dev      # http://localhost:3000/en
-pnpm lint && pnpm typecheck && pnpm test && pnpm build
-```
-
-Conventions: algorithms live in `lib/core/*.ts` as pure functions with unit tests
-(components get happy-dom tests, including a fake serial port); browser APIs are
-wrapped in `lib/browser/*.ts`. UI components only handle state and rendering.
-Unimplemented tools are shown as grey, disabled cards instead of fake entries — and
-only `status: 'done'` tools make it into `sitemap.xml`. Prefer a proven library over
-hand-rolled code: CRC comes from js-crc, ANSI colour from `ansi_up`, HMAC from Web
-Crypto. The tool list has a single source of truth in `lib/tools-meta.ts`.
-
-Available today (7): number base converter, **CRC calculator** (24 presets + custom
-parameters, verifies the trailing CRC of a pasted frame), **bitfield / register
-inspector** (export C macros), **HEX ↔ ASCII ↔ C array** converter, **Modbus frame
-builder & parser** (RTU + TCP), **Web Serial monitor** (desktop Chrome/Edge over
-https or localhost — ports are only opened after you authorise them), and the OneNET
-MQTT credential generator.
-
-Deploy: **live at <https://embedkit.ryanuo.cc>**, auto-deployed from `main` on Vercel.
-It is a plain Next.js app — no environment variables, no database, no backend. Import
-the repo at <https://vercel.com/new> and accept the defaults; every push to `main`
-ships to production. The custom domain is a CNAME to `cname.vercel-dns.com`. If you
-move to another domain, update `SITE_URL` in `lib/site.ts` (it feeds canonical URLs,
-hreflang, `sitemap.xml` and `robots.txt`).
+明确不做（需要后端 / 长连接 / 实机）：逻辑分析仪、在线 MQTT 客户端、Modbus 实机主站。
 
 ## License
 

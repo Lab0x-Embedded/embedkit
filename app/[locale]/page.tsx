@@ -51,9 +51,12 @@ export default async function HomePage({
           <Badge variant="default" className="rounded-4xl">
             {t('available', { count: availableCount })}
           </Badge>
-          <Badge variant="outline" className="rounded-4xl">
-            {t('planned', { count: plannedCount })}
-          </Badge>
+          {/* 全部做完后不再显示「0 个规划中」—— 那看着像坏了 */}
+          {plannedCount > 0 && (
+            <Badge variant="outline" className="rounded-4xl">
+              {t('planned', { count: plannedCount })}
+            </Badge>
+          )}
           <span className="text-xs text-muted-foreground">{t('privacyNote')}</span>
         </div>
       </section>
@@ -76,9 +79,12 @@ export default async function HomePage({
         )
       })}
 
-      <section className="rounded-xl border border-dashed border-border/80 p-5">
-        <p className="text-sm text-muted-foreground">{t('plannedNote')}</p>
-      </section>
+      {/* 有规划中的工具时才解释灰卡的含义 */}
+      {plannedCount > 0 && (
+        <section className="rounded-xl border border-dashed border-border/80 p-5">
+          <p className="text-sm text-muted-foreground">{t('plannedNote')}</p>
+        </section>
+      )}
     </div>
   )
 }
