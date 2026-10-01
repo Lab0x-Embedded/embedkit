@@ -10,6 +10,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { routing } from '@/i18n/routing'
+import { themeInitScript } from '@/lib/theme'
 import '../globals.css'
 
 const geistSans = Geist({ subsets: ['latin'], variable: '--font-sans' })
@@ -52,14 +53,15 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
+      <head>
+        {/* 首屏主题脚本：由 Server Component 输出，浏览器解析时立即执行，避免主题闪烁。
+            不放在客户端组件里，是因为 React 19 不会执行客户端渲染出来的 script。 */}
+        {/* eslint-disable-next-line react/dom-no-dangerously-set-innerhtml -- 内联脚本是唯一能在首次绘制前设定主题的办法，内容由 themeInitScript() 生成，不来自用户输入 */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript() }} />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NextIntlClientProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
+          <ThemeProvider>
             <TooltipProvider>
               <div className="flex min-h-svh flex-col">
                 <SiteHeader />
@@ -69,8 +71,8 @@ export default async function LocaleLayout({
                 <SiteFooter />
               </div>
             </TooltipProvider>
+            <Toaster position="top-center" />
           </ThemeProvider>
-          <Toaster position="top-center" />
         </NextIntlClientProvider>
       </body>
     </html>
