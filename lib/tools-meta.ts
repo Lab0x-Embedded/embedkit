@@ -38,10 +38,10 @@ export const categories: CategoryId[] = ['calc', 'bytes', 'proto', 'cloud']
  */
 export const tools: ToolMeta[] = [
   { slug: 'base-converter', category: 'calc', status: 'done', icon: ArrowLeftRight },
-  { slug: 'crc', category: 'calc', status: 'planned', icon: ShieldCheck },
-  { slug: 'bitfield', category: 'calc', status: 'planned', icon: Cpu },
+  { slug: 'crc', category: 'calc', status: 'done', icon: ShieldCheck },
+  { slug: 'bitfield', category: 'calc', status: 'done', icon: Cpu },
   { slug: 'hex-ascii', category: 'bytes', status: 'done', icon: Code },
-  { slug: 'modbus-frame', category: 'proto', status: 'planned', icon: Plug },
+  { slug: 'modbus-frame', category: 'proto', status: 'done', icon: Plug },
   { slug: 'serial', category: 'proto', status: 'done', icon: Radio, needsLocalRuntime: true },
   { slug: 'onenet-mqtt', category: 'cloud', status: 'done', icon: Cloud },
 ]

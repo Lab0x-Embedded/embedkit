@@ -1,6 +1,8 @@
+import { parse } from '@formatjs/icu-messageformat-parser'
 import { describe, expect, it } from 'vitest'
 import en from '../messages/en.json'
 import zh from '../messages/zh.json'
+import { CRC_PRESETS } from './core/crc'
 import { tools } from './tools-meta'
 
 type Tree = Record<string, unknown>
@@ -55,6 +57,21 @@ describe('i18n 文案一致性', () => {
     expect(mismatched).toEqual([])
   })
 
+  it('每条文案都能被 ICU 解析', () => {
+    // 文案里出现字面量花括号（比如 C 代码片段）会被 ICU 当成参数占位符，
+    // 运行时抛 INVALID_MESSAGE 且只在控制台可见 —— 这条断言把它变成红灯。
+    const broken: string[] = []
+    for (const [key, value] of [...zhKeys, ...enKeys]) {
+      try {
+        parse(value)
+      }
+      catch (error) {
+        broken.push(`${key}: ${(error as Error).message}`)
+      }
+    }
+    expect(broken).toEqual([])
+  })
+
   it('tools-meta 里每个工具都有 name / desc 文案', () => {
     const missing = tools.filter((tool) => {
       const entry = (zh as Tree).Tools as Record<string, { name?: string, desc?: string }>
@@ -69,5 +86,20 @@ describe('i18n 文案一致性', () => {
     const slugs = new Set(tools.map(tool => tool.slug))
     const orphan = Object.keys((zh as Tree).Tools as Tree).filter(slug => !slugs.has(slug))
     expect(orphan).toEqual([])
+  })
+
+  it('每个 CRC 预设都有双语名称', () => {
+    const zhPresets = (zh as Tree).Crc as { presets: Tree }
+    const enPresets = (en as Tree).Crc as { presets: Tree }
+    const missing = CRC_PRESETS.filter(preset =>
+      !(preset.id in zhPresets.presets) || !(preset.id in enPresets.presets),
+    ).map(preset => preset.id)
+    expect(missing).toEqual([])
+  })
+
+  it('预设文案里没有多余的条目', () => {
+    const ids = new Set<string>(CRC_PRESETS.map(preset => preset.id))
+    const zhPresets = (zh as Tree).Crc as { presets: Tree }
+    expect(Object.keys(zhPresets.presets).filter(id => !ids.has(id))).toEqual([])
   })
 })
