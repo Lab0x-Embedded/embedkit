@@ -116,6 +116,7 @@
     "paramsNotObject": "最外层要是一个 JSON 对象 —— 花括号里放「属性名: 值」这样的键值对。数组、数字、字符串都不行。",
     "value": "值",
     "generateAt": "生成 AT 指令",
+    "atSendNote": "一行一行发：每条命令回车后等模组响应，别整段粘贴。AT+MQTTPUBRAW 要分两次 —— 命令行回车后等模组回 > 提示符，再把下一行的 payload 原样发出去（原始字节，不转义、不加引号）。",
     "atHint": "先在上面生成 MQTT 参数 —— AT 指令里要用到 Token。",
     "topics": "物模型 Topic",
     "topicsNote": "标识符与功能点以 OneNET 控制台为准。",

@@ -438,6 +438,8 @@ export function OneNetMqtt() {
                   </span>
                   <CopyButton value={atText} label={t('copy')} copiedLabel={t('copied')} />
                 </div>
+                {/* 「复制」按钮是整段复制的，正好会诱导整段粘贴 —— 这句就放在它旁边 */}
+                <p className="text-xs leading-relaxed text-muted-foreground">{t('atSendNote')}</p>
                 <pre className="max-h-80 overflow-auto rounded-lg border border-border/70 bg-muted/40 p-3 font-mono text-xs leading-relaxed break-all whitespace-pre-wrap">
                   {atText}
                 </pre>

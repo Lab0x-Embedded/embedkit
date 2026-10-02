@@ -365,6 +365,19 @@ describe('oneNet · AT 指令', () => {
     expect(bodyText()).toContain(expected.token)
   })
 
+  it('给出「一行一行发」的提示，且只在生成指令后出现', async () => {
+    renderTool()
+    fillValidForm()
+    await generateAndWait()
+    // 还没生成指令时不该出现，否则这句提示就成了无意义的常驻文字
+    expect(bodyText()).not.toContain(t.atSendNote)
+
+    fireEvent.click(generateAtButton())
+    await waitFor(() => expect(bodyText()).toContain(t.atBlock.publish))
+
+    expect(bodyText()).toContain(t.atSendNote)
+  })
+
   it('没填 WiFi 名称时用默认的 MyWiFi 占位，不会生成空 SSID', async () => {
     renderTool()
     fillValidForm()

@@ -116,6 +116,7 @@
     "paramsNotObject": "The top level must be a JSON object — key/value pairs inside braces. Arrays, numbers and strings are rejected.",
     "value": "Value",
     "generateAt": "Generate AT commands",
+    "atSendNote": "Send them one line at a time and wait for the module to answer — do not paste the whole block. AT+MQTTPUBRAW takes two sends: press enter on the command, wait for the > prompt, then send the payload line as-is (raw bytes, no escaping, no quotes).",
     "atHint": "Generate the MQTT parameters first — the AT commands embed the token.",
     "topics": "Thing-model topics",
     "topicsNote": "Identifiers and functions depend on your OneNET product.",
