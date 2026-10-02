@@ -39,13 +39,8 @@ import { cn } from '@/lib/utils'
 const METHODS: OneNetMethod[] = ['sha1', 'sha256']
 const DAY_PRESETS = [1, 30, 365] as const
 
-/** 表单里只有过期时间不进本地存储：它是绝对时间点，存下来下次打开就成了过去 */
-interface ExpiryState {
-  date: string
-  time: string
-}
-
-const EMPTY_EXPIRY: ExpiryState = { date: '', time: '' }
+/** 给 useSyncExternalStore 用的空订阅：本组件只关心快照，不需要外部事件源 */
+const subscribeNoop = () => () => {}
 
 export function OneNetMqtt() {
   const t = useTranslations('OneNet')
@@ -56,7 +51,6 @@ export function OneNetMqtt() {
     onenetStore.getSnapshot,
     onenetStore.getServerSnapshot,
   )
-  const [expiry, setExpiry] = useState<ExpiryState>(EMPTY_EXPIRY)
   /** 属性上报文本的解析结果：边打边算，非法时禁掉生成按钮并给出原因 */
   const params = useMemo(() => parsePropertyParams(form.propertyParams), [form.propertyParams])
   const [result, setResult] = useState<OneNetBuild | null>(null)
@@ -72,8 +66,21 @@ export function OneNetMqtt() {
    *  这样渲染结果与时间无关，SSG 出来的 HTML 不会和客户端算出不同的值。
    */
   const explicitExpiry = useMemo(
-    () => dateTimeToTimestamp(expiry.date, expiry.time),
-    [expiry.date, expiry.time],
+    () => dateTimeToTimestamp(form.date, form.time),
+    [form.date, form.time],
+  )
+
+  /**
+   * 填的过期时间是不是已经过去了。
+   *
+   * 走 useSyncExternalStore 而不是直接比 Date.now()：服务端必须返回 false，
+   * 否则 SSG 出来的 HTML（那时还没有本地存储里的值）会和客户端首帧不一致，
+   * hydration 直接报错。串口页判断 Web Serial 可用性用的是同一个套路。
+   */
+  const isExpiryPast = useSyncExternalStore(
+    subscribeNoop,
+    () => explicitExpiry !== null && explicitExpiry * 1000 <= Date.now(),
+    () => false,
   )
 
   const topicLabels: Record<string, string> = {
@@ -158,7 +165,7 @@ export function OneNetMqtt() {
 
   function applyPreset(days: number) {
     const next = timestampToDateTime(expiryFromNow(days))
-    setExpiry({ date: next.date, time: next.time })
+    onenetStore.update({ date: next.date, time: next.time })
   }
 
   return (
@@ -240,14 +247,14 @@ export function OneNetMqtt() {
                   <Input
                     type="date"
                     className="font-mono text-xs"
-                    value={expiry.date}
-                    onChange={event => setExpiry(previous => ({ ...previous, date: event.target.value }))}
+                    value={form.date}
+                    onChange={set('date')}
                   />
                   <Input
                     type="time"
                     className="font-mono text-xs"
-                    value={expiry.time}
-                    onChange={event => setExpiry(previous => ({ ...previous, time: event.target.value }))}
+                    value={form.time}
+                    onChange={set('time')}
                   />
                 </div>
                 <div className="flex flex-wrap items-center gap-1">
@@ -290,6 +297,10 @@ export function OneNetMqtt() {
                       </>
                     )}
               </div>
+              {/* 值照旧保留，只是提醒签出来的 Token 会立刻失效 */}
+              {isExpiryPast && (
+                <p className="text-xs text-destructive">{t('expirePastWarning')}</p>
+              )}
             </div>
 
             <Separator />

@@ -36,6 +36,8 @@ function renderTool() {
 }
 
 const bodyText = () => (document.body.textContent ?? '').replace(/\s+/g, ' ')
+/** 当前 localStorage 里那份 OneNET 状态 */
+const saved = () => window.localStorage.getItem(ONENET_STORAGE_KEY) ?? '{}'
 const field = (id: string) => document.getElementById(id) as HTMLInputElement
 /** 日期 / 时间输入没有 id，按 type 定位 */
 const dateInput = () => document.querySelector('input[type="date"]') as HTMLInputElement
@@ -116,13 +118,13 @@ describe('oneNet · 本地持久化', () => {
     expect(JSON.parse(saved()).deviceKey).toBe(DEMO_KEY)
   })
 
-  it('过期时间不写进存储（绝对时间点存下来下次就是过期的）', () => {
+  it('过期时间也写进存储（需求已反转：刷新后要能回显）', () => {
     renderTool()
     fireEvent.change(dateInput(), { target: { value: FIXED_DATE } })
     fireEvent.change(timeInput(), { target: { value: FIXED_TIME } })
 
-    expect(saved()).not.toContain(FIXED_DATE)
-    expect(JSON.parse(saved()).date).toBeUndefined()
+    expect(JSON.parse(saved()).date).toBe(FIXED_DATE)
+    expect(JSON.parse(saved()).time).toBe(FIXED_TIME)
   })
 
   it('重置把存储里的密钥也擦掉（共用电脑要能清干净）', () => {
@@ -436,6 +438,74 @@ describe('oneNet · AT 指令', () => {
     await generateAndWait()
     fireEvent.click(generateAtButton())
     await waitFor(() => expect(bodyText()).toContain('MyWiFi'))
+  })
+})
+
+describe('oneNet · 过期时间回显与过期提示', () => {
+  /** 造一个「将来」和「过去」的日期，避免把测试写死在某个具体年份 */
+  const shiftDays = (days: number) => {
+    const d = new Date(Date.now() + days * 86400_000)
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return {
+      date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+      time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+    }
+  }
+
+  it('填过的过期时间会写进存储，重新挂载后回显', () => {
+    renderTool()
+    const when = shiftDays(7)
+    fireEvent.change(dateInput(), { target: { value: when.date } })
+    fireEvent.change(timeInput(), { target: { value: when.time } })
+
+    expect(JSON.parse(saved()).date).toBe(when.date)
+    expect(JSON.parse(saved()).time).toBe(when.time)
+
+    cleanup()
+    renderTool()
+
+    expect(dateInput().value).toBe(when.date)
+    expect(timeInput().value).toBe(when.time)
+  })
+
+  it('留空表示按「现在 + 30 天」算，默认不填任何过期值', () => {
+    renderTool()
+    expect(dateInput().value).toBe('')
+    expect(timeInput().value).toBe('')
+    expect(bodyText()).toContain(t.expireDefault)
+    expect(bodyText()).not.toContain(t.expirePastWarning)
+  })
+
+  it('将来的时间不提示；过去的才提示，而且值照旧保留', () => {
+    renderTool()
+
+    const future = shiftDays(3)
+    fireEvent.change(dateInput(), { target: { value: future.date } })
+    fireEvent.change(timeInput(), { target: { value: future.time } })
+    expect(bodyText()).not.toContain(t.expirePastWarning)
+
+    const past = shiftDays(-3)
+    fireEvent.change(dateInput(), { target: { value: past.date } })
+    fireEvent.change(timeInput(), { target: { value: past.time } })
+
+    expect(bodyText()).toContain(t.expirePastWarning)
+    // 关键：提示归提示，用户填的值不能被丢掉
+    expect(dateInput().value).toBe(past.date)
+    expect(timeInput().value).toBe(past.time)
+  })
+
+  it('清空之后提示消失，回到滚动默认', () => {
+    renderTool()
+    const past = shiftDays(-3)
+    fireEvent.change(dateInput(), { target: { value: past.date } })
+    fireEvent.change(timeInput(), { target: { value: past.time } })
+    expect(bodyText()).toContain(t.expirePastWarning)
+
+    fireEvent.change(dateInput(), { target: { value: '' } })
+    fireEvent.change(timeInput(), { target: { value: '' } })
+
+    expect(bodyText()).not.toContain(t.expirePastWarning)
+    expect(bodyText()).toContain(t.expireDefault)
   })
 })
 

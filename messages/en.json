@@ -89,6 +89,7 @@
     "method": "Signature method",
     "methodNote": "version is fixed at 2018-10-31 by the spec.",
     "expire": "Token expiry",
+    "expirePastWarning": "That time is already in the past — the signed token would expire immediately. Pick a new time, or clear it to use “now + 30 days”.",
     "expireNote": "Local timezone; empty means now + 30 days.",
     "preset1d": "+1 day",
     "preset30d": "+30 days",
@@ -133,7 +134,7 @@
       "mqtt": "MQTT connect",
       "subscribe": "Subscribe downstream topics",
       "publish": "Property report (two separate sends, one line at a time)",
-      "reply": "Property set reply",
+      "reply": "Property set reply (two separate sends, one line at a time)",
       "fallback": "Fallback parameters"
     },
     "topic": {

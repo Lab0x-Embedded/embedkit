@@ -12,8 +12,9 @@
  *
  * 属性上报的 params 以**原始文本**存（propertyParams），不是解析后的对象 —— 见该字段注释。
  *
- * **过期时间（date/time）刻意不进存储**：它是个绝对时间点，存下来下次打开就成了
- * 过去的时间，Token 直接是废的。留空表示「从现在起 N 天」，才对。
+ * **过期时间（date/time）也进存储**：用户填过的东西刷新后要能回显，丢掉比显示
+ * 一个可能已过期的值更让人困惑。是否已过期由页面提示，存储层不判断时间。
+ * 留空表示「从现在起 N 天」，每次重算，所以默认值必须是空串。
  */
 
 import type { OneNetMethod } from './onenet'
@@ -32,6 +33,15 @@ export interface OneNetFormState {
    * 存解析结果的话，一处语法错误就会把用户写的东西整个丢掉。
    */
   propertyParams: string
+  /**
+   * Token 过期时间（年月日 / 时:分 两个输入框）。
+   *
+   * 存的是**绝对时间点**，所以刷新回来可能已经过去了 —— 但存储层不做时间判断：
+   * 丢掉用户填过的东西比显示一个过期值更让人困惑。过期由页面给提示（见组件里的
+   * isExpiryPast），留空则按「现在 + 30 天」滚动计算。
+   */
+  date: string
+  time: string
 }
 
 export const ONENET_STORAGE_KEY = 'embedkit.onenet.v1'
@@ -50,6 +60,9 @@ export const DEFAULT_ONENET_STATE: OneNetFormState = {
   wifiSsid: '',
   wifiPassword: '',
   propertyParams: DEFAULT_PROPERTY_PARAMS,
+  // 留空 = 按「现在 + 30 天」算，所以默认必须是空的
+  date: '',
+  time: '',
 }
 
 const METHODS: OneNetMethod[] = ['sha1', 'sha256']
@@ -62,6 +75,8 @@ const TEXT_FIELDS = [
   'wifiSsid',
   'wifiPassword',
   'propertyParams',
+  'date',
+  'time',
 ] as const
 
 /** 校验从本地存储读回来的状态；坏值逐项回退成默认，保证 UI 不炸 */

@@ -89,6 +89,7 @@
     "method": "签名算法",
     "methodNote": "官方 version 固定为 2018-10-31。",
     "expire": "Token 过期时间",
+    "expirePastWarning": "这个时间已经过去了，签出来的 Token 会立刻失效 —— 换个时间，或清空按「现在 + 30 天」算。",
     "expireNote": "本地时区；留空按「现在 + 30 天」计算。",
     "preset1d": "+1 天",
     "preset30d": "+30 天",
@@ -133,7 +134,7 @@
       "mqtt": "MQTT 连接",
       "subscribe": "订阅下行主题",
       "publish": "属性上报（分两次发送，一行一行发送）",
-      "reply": "属性设置回复",
+      "reply": "属性设置回复（分两次发送，一行一行发送）",
       "fallback": "连不上时的备选参数"
     },
     "topic": {

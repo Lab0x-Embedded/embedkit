@@ -100,12 +100,26 @@ describe('onenetStore · 持久化', () => {
     expect(saved.wifiPassword).toBe('')
   })
 
-  it('update 不接受 date/time（过期时间不进存储，否则回来就是过期的）', () => {
-    const store = createOneNetStore(fakeStorage())
-    store.update({ deviceId: 'dev-1' })
+  it('过期时间也持久化 —— 刷新后要能回显（需求变更，别再改回去）', () => {
+    const storage = fakeStorage()
+    createOneNetStore(storage).update({ date: '2027-01-02', time: '03:04' })
 
-    expect('date' in store.getSnapshot()).toBe(false)
-    expect('time' in store.getSnapshot()).toBe(false)
+    const reopened = createOneNetStore(storage)
+    expect(reopened.getSnapshot().date).toBe('2027-01-02')
+    expect(reopened.getSnapshot().time).toBe('03:04')
+  })
+
+  it('过期时间默认是空的：留空表示按「现在 + 30 天」算', () => {
+    expect(DEFAULT_ONENET_STATE.date).toBe('')
+    expect(DEFAULT_ONENET_STATE.time).toBe('')
+  })
+
+  it('存下来的过期时间即使已经过去也照样回显（由页面提示，不由存储丢弃）', () => {
+    const storage = fakeStorage()
+    createOneNetStore(storage).update({ date: '2020-01-01', time: '00:00' })
+
+    // 存储层不做时间判断：丢掉用户的输入比显示一个过期值更让人困惑
+    expect(createOneNetStore(storage).getSnapshot().date).toBe('2020-01-01')
   })
 })
 
