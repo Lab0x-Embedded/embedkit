@@ -1,6 +1,6 @@
 ---
 name: embedkit-dev
-description: "Use when working on the EmbedKit repository (github.com/Lab0x-Embedded/embedkit, live at embedkit.ryanuo.cc) — any change to its Next.js pages, lib/core pure functions, shadcn/ui components, i18n messages, tests, README or deploy setup. Contains the directory layout, the five project conventions, the local-dev traps that have already burned us (a foreign Service Worker hijacking localhost:3000, and dev/build sharing .next), the quality gates, what is already shipped, and what is planned next. Load this before editing anything here so you add tools the way this repo expects instead of inventing a new structure. 中文项目，注释与文档都用中文。"
+description: "Use when working on the EmbedKit repository (github.com/Lab0x-Embedded/embedkit, live at embedkit.ryanuo.cc) — any change to its Next.js pages, lib/core pure functions, shadcn/ui components, i18n messages, tests, README or deploy setup. Contains the directory layout, the five project conventions, the three local-dev traps that have already burned us (a foreign Service Worker hijacking localhost:3000, dev/build sharing .next, and the sandboxed SWC cache), the quality gates, what is already shipped, and what is planned next. Load this before editing anything here so you add tools the way this repo expects instead of inventing a new structure. 中文项目，注释与文档都用中文。"
 license: MIT
 ---
 
@@ -19,17 +19,20 @@ license: MIT
 ## 一、目录结构
 
 ```
+next.config.ts               含 experimental.globalNotFound（根布局在 [locale] 里，缺了它 404 会掉回 Next 默认页）
+proxy.ts                     Next 16 把 middleware 改名成了 proxy.ts（next-intl 的 locale 路由）
 app/
   sitemap.ts / robots.ts     SEO 产物，从 tools-meta 派生
   global-error.tsx           根布局级别的兜底错误页
   global-not-found.tsx       没匹配到路由的 404（根布局在 [locale] 里，只能用它）
+  globals.css                Tailwind v4 + shadcn 设计令牌
   [locale]/                  页面（Server Component，只做取文案与布局）
     page.tsx                 首页：分类 + 工具卡片（含禁用态）
     not-found.tsx            代码里 notFound() 抛出的 404
     error.tsx                工具页错误边界（重试）
     tools/<slug>/page.tsx    工具页：取文案 + <ToolShell> + 交互组件
 components/
-  ui/                        shadcn 生成的原语（尽量别手改）
+  ui/                        shadcn 生成的原语（尽量别手改；当前 dropdown-menu / tabs 没人引用）
   layout/                    页头 / 页脚 / 语言切换 / 主题切换
   tools/tool-shell.tsx       所有工具页共用的标题外壳
   tools/<slug>/              工具的交互壳（'use client'，只做状态与渲染）
@@ -37,12 +40,14 @@ lib/
   site.ts                    SITE_URL + pageAlternates（canonical / hreflang）
   tools-meta.ts              工具清单单一数据源（首页、分类、卡片、sitemap 全由它派生）
   tools-text.ts              按 slug 取工具文案
-  i18n.test.ts               文案一致性校验（键对齐、占位符、ICU 可解析、与工具清单对齐）
+  utils.ts                   cn()
+  i18n.test.ts               文案与清单的一致性校验（见下方「质量闸门」）
   core/*.ts                  工具算法：纯函数 + 同名单测
   browser/*.ts               浏览器 API 封装（Web Serial、localStorage），只在客户端跑
 i18n/                        next-intl 路由 / 请求配置
 messages/{zh,en}.json        文案
 public/preview.png           README 里的首页预览图
+.claude/skills/embedkit-dev/ 这份开发文档
 ```
 
 关键点：**`lib/tools-meta.ts` 是唯一数据源**。首页卡片、分类计数、`sitemap.xml` 全部由它派生，所以加工具只改数据 + 文案 + 两个文件，不要另建一套清单。
@@ -123,6 +128,16 @@ pnpm build          # next build（注意坑 2、坑 3）
 
 测试分布：`lib/core/*.test.ts` 是纯函数（**边界与非法输入必测**），`components/tools/*/*.test.tsx` 是 happy-dom 组件测试（断言值从 `messages/zh.json` 取，不写死中文字面量）。
 
+`lib/i18n.test.ts` 是**红色的网**，它守这些不变量（每条都被真实 bug 触发过）：
+
+| 断言 | 拦住的真实问题 |
+| --- | --- |
+| zh / en 键完全一致、无空文案 | 加工具只写了中文文案 |
+| 两种语言占位符相同 | 改了文案忘了同步另一种语言 |
+| **没有占位符被 ICU 引号语法吞掉** | 英文 `'{char}'`：ICU 里单引号是转义符，参数不替换且**不报错**，页面直接显示 `{char}` |
+| 每条文案都能被 ICU 解析 | 文案里写 C 代码片段 `{ ... }`，运行时抛 INVALID_MESSAGE，只在控制台可见 |
+| 分类 / 工具 / CRC 预设与清单双向对齐 | 加了清单条目忘了写文案，首页渲染出键名 |
+
 ---
 
 ## 五、当前进度
@@ -148,23 +163,50 @@ pnpm build          # next build（注意坑 2、坑 3）
 
 ### 已知的债
 
-- `base-converter` 与 `onenet-mqtt` **没有组件测试**（其余 5 个都有）。`onenet-mqtt` 组件 400+ 行，最值得补。
-- **没有 E2E / 冒烟测试**。路由可达性、404、重定向目前靠人工 `curl` 验证，没有固化。
-- **没有 `opengraph-image`**：分享到社交平台没有预览图（og:title / og:description 是有的）。
-- `components/ui/*` 里有些 shadcn 原语（`tabs`、`switch`、`dropdown-menu`、`sonner` 之外的部分）可能已经没人引用，没清理过。
+**测试覆盖**
+
+- `base-converter` 与 `onenet-mqtt` **没有组件测试**（其余 6 个都有）。`onenet-mqtt` 组件 400+ 行，最值得补。
+- **没有 E2E / 冒烟测试**。路由可达性、404、重定向、sitemap 目前靠人工 `curl` 验证，验完就没了。
+- CI 配置齐全，但**从未在 GitHub 上确认跑绿过**（本机 `gh` 未认证）。
+
+**与原始计划的差异 / 空头承诺**
+
+原始计划在 `~/.hermes/plans/2026-10-01_185511-embedkit-plan.md`，与现状有这几处出入，别对着计划看走眼：
+
+- **页头没有工具导航**。计划说「首页卡片、导航、sitemap、搜索全部派生自 tools-meta」，实际只有卡片和 sitemap 派生；导航与搜索从未实现（`site-header.tsx` 只有 GitHub / 语言 / 主题）。要么补做，要么别再声称。
+- **CRC 比计划少两个能力**：预设里没有 CAN；没有文件输入（计划写的是「输入 HEX / ASCII / 文件」）。24 个预设都是常规的。
+- **没有 `opengraph-image`**：分享到社交平台没有预览图（og:title / og:description 是有的）。计划里标的是「可选」。
+- **`tools-meta` 没有计划里的 `keywords` / `needsBackend` 字段**，实际加的是 `needsLocalRuntime`（浏览器+硬件能力，语义不同）和 `externalUrl`。
+
+**其他**
+
+- `components/ui/` 里 `dropdown-menu` 与 `tabs` 两个原语没人引用，可以删。
+- 沙箱里跑 `pnpm build` / `pnpm start` 需要 `SWC_NATIVE_BINDING_CACHE`（见坑 3）。
 
 ---
 
 ## 六、后续计划
 
-**下一步候选**（按性价比）：IEEE 754 浮点解析 · STM32 定时器 / 波特率计算 · 校验和工厂（累加和 / XOR / BCC / LRC）· CAN 报文位域解析 · 自定义协议帧构建器 · AT 指令速查。
+原始计划 16 个工具，**已上线 8 个**（v0.1 六个 + `serial` + `pin-lookup`）。剩下 8 个，按计划原本的分期列出（不要丢掉条目）：
+
+| 原计划阶段 | slug | 工具 |
+| --- | --- | --- |
+| v0.2 | `float-ieee` | IEEE 754 浮点解析（float32/64 ↔ HEX/BIN，正负 0 / NaN / 次正规） |
+| v0.2 | `checksum` | 校验和工厂（累加和 8/16、XOR、BCC、LRC；批量校验一帧里多处校验字段） |
+| v0.2 | `timer-calc` | STM32 定时器 / 波特率计算（PSC·ARR → 频率；USARTDIV/BRR 与误差百分比） |
+| v0.2 | `can-frame` | CAN 报文解析（标准/扩展帧、ID/IDE/RTR/DLC/Data 位域映射） |
+| v0.2 | `adc-calc` | ADC 换算（原始值 ↔ 电压 ↔ 物理量，分辨率/Vref/分压/两点校准） |
+| v0.3 | `frame-builder` | 自定义协议帧构建器（帧头/长度/校验可配 + 生成 C 解析代码） |
+| v0.3 | `at-commands` | AT 指令速查与填空生成（ESP / 4G 模组） |
+| v0.3 | `reference` | 速查表（波特率误差表、CRC 参数表、编码表） |
 
 **明确不做**（需要后端 / 长连接 / 实机）：逻辑分析仪、在线 MQTT 客户端、Modbus 实机主站。
 
 **已外链的**：芯片引脚查询 → PinAtlas（`core/pinatlas.ts`）。这类「隔壁已经有且维护得不错」
 的能力一律走 `ext` 外链，不要在本站重建一份数据。
 
-**开工顺序建议**：先补上面「已知的债」里的前两条（组件测试 + E2E），再开新工具 —— 现在每加一个工具都是纯手工回归。
+**开工顺序建议**：先还「已知的债」——组件测试（`base-converter` / `onenet-mqtt`）→ E2E 冒烟
+→ 再决定页头导航补不补。**现在每加一个工具都是纯手工回归**，债还完再开新工具更划算。
 
 ---
 
