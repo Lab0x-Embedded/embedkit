@@ -134,7 +134,24 @@ F12 → Application → Service Workers → 找到 localhost:3000 → Unregister
 
 **推论**：跑 `pnpm build` 前先确认 3000 端口没有 dev server 在监听（`lsof -nP -iTCP:3000 -sTCP:LISTEN`）。如果用户正在跑 dev，**不要**为了「验证一下」就跑 build。
 
-### 坑 3：本机沙箱里 build/start 需要绕过 SWC 缓存
+### 坑 3：OG 图片路由不声明 `generateStaticParams` 会变成「按需渲染」
+
+文件约定生成的 `opengraph-image` **不会自动继承父级的静态参数**。不声明的话
+构建产物里是 `ƒ (Dynamic)` —— 运行时才渲染，于是 `readFile('assets/og/...')`
+成了线上依赖（字体没被追踪进去就是 tofu 或 500）。
+
+每个 OG 路由都要自己写一遍：
+
+```tsx
+export function generateStaticParams() {
+  return routing.locales.map(locale => ({ locale }))
+}
+```
+
+声明之后构建产物变成 `● (SSG)`，18 张图（9 路由 × 2 语言）都在构建时生成完，
+运行时不再需要字体文件。`next.config` 里的 `outputFileTracingIncludes` 是第二道保险。
+
+### 坑 4：本机沙箱里 build/start 需要绕过 SWC 缓存
 
 在这个仓库上以受沙箱限制的身份跑 `pnpm build` / `pnpm start`，SWC 会试图把原生绑定缓存写进 `~/Library/Caches/swc-native-501/` 而被拒（`ERR_SWC_NATIVE_CACHE`）。绕过：
 
@@ -143,6 +160,29 @@ SWC_NATIVE_BINDING_CACHE=/private/tmp/swc-native pnpm build
 ```
 
 CI 和用户自己的终端没有这个限制。
+
+### 坑 5：想验构建又不想动 dev server，用隔离副本
+
+`next build` 会覆写 `.next/`，把正在跑的 dev server 搞挂（见坑 2）。
+但验证构建很重要（OG 图片、静态生成这类问题只有 build 才暴露）。
+安全的做法是复制一份到项目外构建：
+
+```bash
+SRC=~/dev/github/embedkit; DST=/private/tmp/embedkit-verify
+rm -rf "$DST"; mkdir -p "$DST"
+rsync -a --exclude node_modules --exclude .next --exclude .git "$SRC/" "$DST/"
+cp -al "$SRC/node_modules" "$DST/node_modules"   # 硬链接，快且不占空间
+cd "$DST" && SWC_NATIVE_BINDING_CACHE=/private/tmp/swc-native ./node_modules/.bin/next build
+```
+
+两个注意点：
+- **`node_modules` 不能做成软链** —— Turbopack 会报
+  `Symlink [project]/node_modules is invalid, it points out of the filesystem root`。
+  用 `cp -al` 硬链接（是"真目录"，但不复制数据）。
+- **不要用 `pnpm build`**：pnpm 会先跑依赖校验，硬链接的 `node_modules` 会被判成
+  `workspace hoist directory is not a real directory`。直接调 `./node_modules/.bin/next build`。
+
+验完对照：源仓库的 `.next/dev` 时间戳应该没变，dev server 还活着。
 
 ---
 
