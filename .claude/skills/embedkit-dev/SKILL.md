@@ -32,8 +32,9 @@ app/
     error.tsx                工具页错误边界（重试）
     tools/<slug>/page.tsx    工具页：取文案 + <ToolShell> + 交互组件
 components/
-  ui/                        shadcn 生成的原语（尽量别手改；当前 dropdown-menu / tabs 没人引用）
+  ui/                        shadcn 生成的原语（尽量别手改；当前只剩 tabs 没人引用）
   layout/                    页头 / 页脚 / 语言切换 / 主题切换
+  layout/tools-nav.tsx       页头的「工具」下拉（由 tools-meta 派生，和卡片/sitemap 同源）
   tools/tool-shell.tsx       所有工具页共用的标题外壳
   tools/<slug>/              工具的交互壳（'use client'，只做状态与渲染）
 lib/
@@ -120,13 +121,13 @@ CI 和用户自己的终端没有这个限制。
 ```bash
 pnpm lint           # eslint（@antfu/eslint-config）
 pnpm typecheck      # tsc --noEmit
-pnpm test           # vitest：18 个文件 / 362 用例
+pnpm test           # vitest：19 个文件 / 371 用例
 pnpm build          # next build（注意坑 2、坑 3）
 ```
 
 四条全绿才算完成。CI（`.github/workflows/ci.yml`）在 push / PR 上跑同样四条。
 
-测试分布：`lib/core/*.test.ts` 是纯函数（**边界与非法输入必测**），`components/tools/*/*.test.tsx` 是 happy-dom 组件测试（断言值从 `messages/zh.json` 取，不写死中文字面量）。**8 个工具都有组件测试。**
+测试分布：`lib/core/*.test.ts` 是纯函数（**边界与非法输入必测**），`components/tools/*/*.test.tsx` 是 happy-dom 组件测试（断言值从 `messages/zh.json` 取，不写死中文字面量）。**8 个工具都有组件测试**，另有页头导航与 i18n 的测试。
 
 写组件测试时的两个坑：
 
@@ -191,13 +192,15 @@ pnpm build          # next build（注意坑 2、坑 3）
 
 原始计划在 `~/.hermes/plans/2026-10-01_185511-embedkit-plan.md`，与现状有这几处出入，别对着计划看走眼：
 
-- **页头没有工具导航**。计划说「首页卡片、导航、sitemap、搜索全部派生自 tools-meta」，实际只有卡片和 sitemap 派生；导航与搜索从未实现（`site-header.tsx` 只有 GitHub / 语言 / 主题）。要么补做，要么别再声称。
+- **搜索仍未实现**（导航已在后续补上）。原始计划说「首页卡片、导航、sitemap、**搜索**全部派生自 tools-meta」；
+  现在卡片 / 导航 / sitemap 三项都是真的，只有搜索没有 —— 8 个工具用下拉已经够找，
+  当**有意不做**即可，别再当成欠账。真要做，数据源现成（同一个 `tools`）。
 - **CRC 比计划少两个能力**：预设里没有 CAN；没有文件输入（计划写的是「输入 HEX / ASCII / 文件」）。24 个预设都是常规的。
 - **`tools-meta` 没有计划里的 `keywords` / `needsBackend` 字段**，实际加的是 `needsLocalRuntime`（浏览器+硬件能力，语义不同）和 `externalUrl`。
 
 **其他**
 
-- `components/ui/` 里 `dropdown-menu` 与 `tabs` 两个原语没人引用，可以删。
+- `components/ui/tabs.tsx` 没人引用，可以删（`dropdown-menu` 已被页头工具导航用上）。
 - 沙箱里跑 `pnpm build` / `pnpm start` 需要 `SWC_NATIVE_BINDING_CACHE`（见坑 3）。
 
 ---
@@ -222,9 +225,9 @@ pnpm build          # next build（注意坑 2、坑 3）
 **已外链的**：芯片引脚查询 → PinAtlas（`core/pinatlas.ts`）。这类「隔壁已经有且维护得不错」
 的能力一律走 `ext` 外链，不要在本站重建一份数据。
 
-**开工顺序建议**：测试欠账已还清（8 个工具全有组件测试），下一个该处理的是
-**页头工具导航** —— 那是唯一的空头承诺（`tools-meta` 注释与原始计划都声称导航由它派生，
-实际没有）。要么补上，要么把那句注释改掉。其余按工具清单推进即可。
+**开工顺序建议**：测试欠账与页头导航都已还清。剩下能做的只有两类 ——
+① 继续按工具清单推进（见上表 8 个候选）；② 想清理就删掉没人引用的 `components/ui/tabs.tsx`。
+CI 没在 GitHub 上确认过，属于「有空顺手看一眼」级别。
 
 **E2E 已决定不做**，别顺手引入；`opengraph-image` 想做就做，优先级低。
 

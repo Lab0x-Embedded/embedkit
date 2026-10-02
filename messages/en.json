@@ -6,6 +6,7 @@
   },
   "Nav": {
     "home": "Home",
+    "tools": "Tools",
     "github": "GitHub",
     "toggleTheme": "Toggle theme",
     "toggleLanguage": "Switch language",

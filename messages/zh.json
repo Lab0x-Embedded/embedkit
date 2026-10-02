@@ -6,6 +6,7 @@
   },
   "Nav": {
     "home": "首页",
+    "tools": "工具",
     "github": "GitHub",
     "toggleTheme": "切换主题",
     "toggleLanguage": "切换语言",
