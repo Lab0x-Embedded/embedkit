@@ -19,7 +19,10 @@ license: MIT
 ## 一、目录结构
 
 ```
-next.config.ts               含 experimental.globalNotFound（根布局在 [locale] 里，缺了它 404 会掉回 Next 默认页）
+next.config.ts               含 experimental.globalNotFound（缺了它未匹配路由的 404 会掉回 Next 默认页）
+                             和 outputFileTracingIncludes（把 assets/og 的字体带进 OG 图片路由）
+assets/og/                    OG 卡片用的中文字体**子集** + 字符集清单 + OFL 许可
+scripts/build-og-font.mjs     从 Google Fonts 取子集字体的脚本（改文案后要跑）
 proxy.ts                     Next 16 把 middleware 改名成了 proxy.ts（next-intl 的 locale 路由）
 app/
   sitemap.ts / robots.ts     SEO 产物，从 tools-meta 派生
@@ -30,7 +33,9 @@ app/
     page.tsx                 首页：分类 + 工具卡片（含禁用态）
     not-found.tsx            代码里 notFound() 抛出的 404
     error.tsx                工具页错误边界（重试）
+    opengraph-image.tsx      首页的 OG 卡片图（next/og 生成）
     tools/<slug>/page.tsx    工具页：取文案 + <ToolShell> + 交互组件
+    tools/<slug>/opengraph-image.tsx  每个工具自己的 OG 卡片图
 components/
   ui/                        shadcn 生成的原语（尽量别手改；当前只剩 tabs 没人引用）
   layout/                    页头 / 页脚 / 语言切换 / 主题切换
@@ -41,6 +46,8 @@ lib/
   site.ts                    SITE_URL + pageAlternates（canonical / hreflang）
   tools-meta.ts              工具清单单一数据源（首页、分类、卡片、sitemap 全由它派生）
   tools-text.ts              按 slug 取工具文案
+  og-text.ts                 OG 卡片文案（**字体子集的字符集由它决定**，纯函数可测）
+  og.tsx                     OG 卡片渲染器（next/og + Satori，server-only）
   utils.ts                   cn()
   i18n.test.ts               文案与清单的一致性校验（见下方「质量闸门」）
   core/*.ts                  工具算法：纯函数 + 同名单测
@@ -76,6 +83,29 @@ public/preview.png           README 里的首页预览图
 
 **依赖原则：能用成熟库就不自己写。** 已经这样用起来的：`js-crc`（CRC 模型目录，187 个模型来自 reveng catalogue）、`ansi_up`（ANSI 转义）、Web Crypto（OneNET HMAC，不引 crypto-js）、BigInt（进制与位运算）。
 反例教训：CRC 一开始是手写的，被指出后才换成 `js-crc` —— 手写意味着一份没人验证的参数表。
+
+### OG 卡片图：改文案后**必须**重新生成字体
+
+分享到社交平台的预览图由 `next/og`（Satori）在构建时生成：首页一张，每个工具各一张。
+两个硬约束（来自 `next/dist/docs` 的 image-response 一节）：
+
+- bundle 上限 **500KB**，而完整 Noto Sans SC 有 10MB+ → **字体必须做子集**
+- Satori **不认 woff2**，只认 ttf / otf / woff
+
+所以 `assets/og/*.ttf` 是「只含卡片上会出现的那些字」的子集（两个权重各 53KB）。
+**只要改了会出现卡片上的文案**（messages 里首页的 title/intro、各工具的名字与说明、分类名），
+就要重新生成字体：
+
+```bash
+UPDATE_OG_CHARSET=1 pnpm test -- lib/og.test.ts   # 同步 assets/og/charset.txt
+node scripts/build-og-font.mjs                     # 按新字符集重新取子集
+```
+
+漏了这步会怎样：`lib/og.test.ts` 直接红，并把上面两条命令打给你。
+新增工具时最容易踩 —— 工具名里出现一个字不在子集里，那张卡就是一个豆腐块。
+
+装饰字符（卡片左上角那个 `>_`）不在文案里，但也要有字形，
+所以它们单独列在 `lib/og-text.ts` 的 `DECORATIVE` 里 —— **加装饰字符也要重新生成字体**。
 
 ---
 
@@ -121,7 +151,7 @@ CI 和用户自己的终端没有这个限制。
 ```bash
 pnpm lint           # eslint（@antfu/eslint-config）
 pnpm typecheck      # tsc --noEmit
-pnpm test           # vitest：19 个文件 / 371 用例
+pnpm test           # vitest：20 个文件 / 379 用例
 pnpm build          # next build（注意坑 2、坑 3）
 ```
 
@@ -179,14 +209,12 @@ pnpm build          # next build（注意坑 2、坑 3）
 
 **明确不做（是决定，不是遗漏 —— 别再「顺手补上」）**
 
-- **E2E / Playwright**：已有 319 条单测 + 组件测试打底，E2E 的收益（浏览器里跑真实交互）
+- **E2E / Playwright**：已有 379 条单测 + 组件测试打底，E2E 的收益（浏览器里跑真实交互）
   抵不过它的代价（几百 MB 浏览器二进制、CI 多一步、跑起来比 vitest 慢一个量级）。
   **除非出现「单测绿但线上坏」的真实事故，否则不引入。**
   代价是这些只能在改动后手工验一遍、验完不留痕：路由可达性、404 是否走站内页、
   `/` 与 `/fr` 的重定向、sitemap 收录、canonical / hreflang、planned 卡片不可点。
   改动这几处时**务必手工 `curl` 一遍**（`pnpm dev` 起着就能验）。
-- **`opengraph-image`**：分享到社交平台没有预览图（og:title / og:description 是有的）。
-  原始计划里标的就是「可选」。
 
 **与原始计划的差异 / 空头承诺**
 
@@ -225,11 +253,11 @@ pnpm build          # next build（注意坑 2、坑 3）
 **已外链的**：芯片引脚查询 → PinAtlas（`core/pinatlas.ts`）。这类「隔壁已经有且维护得不错」
 的能力一律走 `ext` 外链，不要在本站重建一份数据。
 
-**开工顺序建议**：测试欠账与页头导航都已还清。剩下能做的只有两类 ——
+**开工顺序建议**：测试欠账、页头导航、og:image 都已还清。剩下能做的只有两类 ——
 ① 继续按工具清单推进（见上表 8 个候选）；② 想清理就删掉没人引用的 `components/ui/tabs.tsx`。
 CI 没在 GitHub 上确认过，属于「有空顺手看一眼」级别。
 
-**E2E 已决定不做**，别顺手引入；`opengraph-image` 想做就做，优先级低。
+**E2E 已决定不做**，别顺手引入。
 
 ---
 

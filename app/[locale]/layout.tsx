@@ -44,7 +44,9 @@ export async function generateMetadata({
       // title / description 兜底，工具页才会显示「CRC 计算器」而不是站点名。
       locale: locale === 'zh' ? 'zh_CN' : 'en_US',
     },
-    twitter: { card: 'summary' },
+    // 图片不在这里写死：由 opengraph-image.tsx 文件约定自动挂上
+    // （每个工具目录下各有一份，所以分享哪个工具就显示哪张卡）
+    twitter: { card: 'summary_large_image' },
   }
 }
 
