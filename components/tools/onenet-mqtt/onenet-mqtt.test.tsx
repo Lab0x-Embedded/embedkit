@@ -413,17 +413,21 @@ describe('oneNet · AT 指令', () => {
     expect(bodyText()).toContain(expected.token)
   })
 
-  it('给出「一行一行发」的提示，且只在生成指令后出现', async () => {
+  it('「属性上报」那一节的标题里就写着「分两次发送、一行一行发」', async () => {
     renderTool()
     fillValidForm()
     await generateAndWait()
-    // 还没生成指令时不该出现，否则这句提示就成了无意义的常驻文字
-    expect(bodyText()).not.toContain(t.atSendNote)
+    // 还没生成指令时不该出现
+    expect(bodyText()).not.toContain(t.atBlock.publish)
 
     fireEvent.click(generateAtButton())
     await waitFor(() => expect(bodyText()).toContain(t.atBlock.publish))
 
-    expect(bodyText()).toContain(t.atSendNote)
+    // 说明必须挂在「属性上报」这个分节标题里（而不是页面别处），
+    // 这样它跟着那两行指令一起出现，位置正好
+    expect(t.atBlock.publish).toContain('分两次')
+    expect(t.atBlock.publish).toContain('一行一行')
+    expect(bodyText()).toContain(`// ===== ${t.atBlock.publish} =====`)
   })
 
   it('没填 WiFi 名称时用默认的 MyWiFi 占位，不会生成空 SSID', async () => {
