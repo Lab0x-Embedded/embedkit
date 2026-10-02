@@ -255,8 +255,15 @@ describe('byteOrder 字节序', () => {
     expect(r.littleEndian).toBe('78 56 34 12')
   })
 
+  it('十六进制字母是大写（和同屏的 HEX 行一致）', () => {
+    // 上面那个用例全是不带字母的数字，曾经因此漏掉了小写问题：
+    // 界面上会并排出现「HEX: FF」和「大端 BE: 00 ff」。
+    expect(byteOrder(0xABn, 16).bigEndian).toBe('00 AB')
+    expect(byteOrder(0xDEADBEEFn, 32).littleEndian).toBe('EF BE AD DE')
+  })
+
   it('16 位补零到 2 字节', () => {
-    expect(byteOrder(0x0Fn, 16).bigEndian).toBe('00 0f')
+    expect(byteOrder(0x0Fn, 16).bigEndian).toBe('00 0F')
   })
 
   it('64 位', () => {
@@ -264,6 +271,6 @@ describe('byteOrder 字节序', () => {
   })
 
   it('负数按补码取字节', () => {
-    expect(byteOrder(-1n, 32).bigEndian).toBe('ff ff ff ff')
+    expect(byteOrder(-1n, 32).bigEndian).toBe('FF FF FF FF')
   })
 })

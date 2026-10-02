@@ -234,12 +234,17 @@ export function interpret(value: bigint, width: BitWidth): InterpretResult {
   }
 }
 
-/** 大端字节数组（hex 字符串，小写补零） */
+/**
+ * 大端字节数组（hex 字符串，大写补零）。
+ *
+ * 必须大写：同一个界面上的 `interpret().hex` 与进制转换的 HEX 行都是大写，
+ * 这里小写会让「HEX: FF」和「大端 BE: 00 ff」并排出现。
+ */
 function bytesOf(value: bigint, width: BitWidth): string[] {
   const unsigned = BigInt.asUintN(width, value)
   const bytes: string[] = []
   for (let i = width / 8 - 1; i >= 0; i--)
-    bytes.push(((unsigned >> BigInt(i * 8)) & 0xFFn).toString(16).padStart(2, '0'))
+    bytes.push(((unsigned >> BigInt(i * 8)) & 0xFFn).toString(16).padStart(2, '0').toUpperCase())
 
   return bytes
 }

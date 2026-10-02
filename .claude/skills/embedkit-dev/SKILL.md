@@ -120,13 +120,22 @@ CI 和用户自己的终端没有这个限制。
 ```bash
 pnpm lint           # eslint（@antfu/eslint-config）
 pnpm typecheck      # tsc --noEmit
-pnpm test           # vitest：16 个文件 / 319 用例
+pnpm test           # vitest：18 个文件 / 362 用例
 pnpm build          # next build（注意坑 2、坑 3）
 ```
 
 四条全绿才算完成。CI（`.github/workflows/ci.yml`）在 push / PR 上跑同样四条。
 
-测试分布：`lib/core/*.test.ts` 是纯函数（**边界与非法输入必测**），`components/tools/*/*.test.tsx` 是 happy-dom 组件测试（断言值从 `messages/zh.json` 取，不写死中文字面量）。
+测试分布：`lib/core/*.test.ts` 是纯函数（**边界与非法输入必测**），`components/tools/*/*.test.tsx` 是 happy-dom 组件测试（断言值从 `messages/zh.json` 取，不写死中文字面量）。**8 个工具都有组件测试。**
+
+写组件测试时的两个坑：
+
+- **JSX 相邻元素之间没有空白**，整页 `textContent` 会把它们首尾相接。要数「渲染了几条」
+  时不能用 `split(/\s+/)`（会长成一整串），数前缀出现次数更可靠
+  （例如 `bodyText().match(/\$sys\//g).length`）。
+- **`// @vitest-environment happy-dom` 必须在文件第一行**。如果文件顶部还有 `import type`，
+  `eslint --fix` 会把那个 import 提到注释前面，指令就不在首位了。类型需要就从函数推导
+  （`Extract<Awaited<ReturnType<typeof fn>>, { ok: true }>`），别加顶层类型导入。
 
 `lib/i18n.test.ts` 是**红色的网**，它守这些不变量（每条都被真实 bug 触发过）：
 
@@ -165,7 +174,6 @@ pnpm build          # next build（注意坑 2、坑 3）
 
 **测试覆盖**
 
-- `base-converter` 与 `onenet-mqtt` **没有组件测试**（其余 6 个都有）。`onenet-mqtt` 组件 400+ 行，最值得补。
 - CI 配置齐全，但**从未在 GitHub 上确认跑绿过**（本机 `gh` 未认证）。
 
 **明确不做（是决定，不是遗漏 —— 别再「顺手补上」）**
@@ -214,9 +222,11 @@ pnpm build          # next build（注意坑 2、坑 3）
 **已外链的**：芯片引脚查询 → PinAtlas（`core/pinatlas.ts`）。这类「隔壁已经有且维护得不错」
 的能力一律走 `ext` 外链，不要在本站重建一份数据。
 
-**开工顺序建议**：先补 `base-converter` / `onenet-mqtt` 的组件测试（唯一还没打底的测试欠账），
-再决定页头导航补不补（那是唯一的空头承诺）。**E2E 已决定不做**，别顺手引入。
-`opengraph-image` 想做就做，优先级低。
+**开工顺序建议**：测试欠账已还清（8 个工具全有组件测试），下一个该处理的是
+**页头工具导航** —— 那是唯一的空头承诺（`tools-meta` 注释与原始计划都声称导航由它派生，
+实际没有）。要么补上，要么把那句注释改掉。其余按工具清单推进即可。
+
+**E2E 已决定不做**，别顺手引入；`opengraph-image` 想做就做，优先级低。
 
 ---
 
