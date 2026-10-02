@@ -81,6 +81,8 @@
     "productIdPlaceholder": "例如 AceV67og0i",
     "deviceId": "设备 ID / 名称",
     "deviceIdPlaceholder": "例如 humi_temp",
+    "showSecret": "显示{name}",
+    "hideSecret": "隐藏{name}",
     "deviceKey": "设备密钥（Base64）",
     "deviceKeyPlaceholder": "OneNET 控制台上的设备密钥",
     "deviceKeyNote": "只在这台浏览器本地参与 HMAC 计算，不会上传；内容会保存在本机，共用电脑请点「重置」清除。",

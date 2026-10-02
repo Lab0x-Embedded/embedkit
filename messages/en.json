@@ -81,6 +81,8 @@
     "productIdPlaceholder": "e.g. AceV67og0i",
     "deviceId": "Device ID / name",
     "deviceIdPlaceholder": "e.g. humi_temp",
+    "showSecret": "Show {name}",
+    "hideSecret": "Hide {name}",
     "deviceKey": "Device key (Base64)",
     "deviceKeyPlaceholder": "the device key from the OneNET console",
     "deviceKeyNote": "Used for the HMAC in this browser only — never uploaded, but saved on this device. Press Reset on a shared machine.",

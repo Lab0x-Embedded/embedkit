@@ -7,6 +7,7 @@ import { KeyRound, RotateCcw, Terminal } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useMemo, useState, useSyncExternalStore } from 'react'
 import { CopyButton } from '@/components/tools/copy-button'
+import { SecretInput } from '@/components/tools/secret-input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -198,12 +199,14 @@ export function OneNetMqtt() {
 
             <div className="space-y-2">
               <Label htmlFor="onenet-key">{t('deviceKey')}</Label>
-              <Input
+              <SecretInput
                 id="onenet-key"
                 className="font-mono text-xs"
                 value={form.deviceKey}
                 onChange={set('deviceKey')}
                 placeholder={t('deviceKeyPlaceholder')}
+                showLabel={t('showSecret', { name: t('deviceKey') })}
+                hideLabel={t('hideSecret', { name: t('deviceKey') })}
                 autoComplete="off"
                 spellCheck={false}
               />
@@ -379,12 +382,14 @@ export function OneNetMqtt() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="onenet-wifi-pwd">{t('wifiPassword')}</Label>
-                <Input
+                <SecretInput
                   id="onenet-wifi-pwd"
                   className="font-mono"
                   value={form.wifiPassword}
                   onChange={set('wifiPassword')}
                   placeholder="12345678"
+                  showLabel={t('showSecret', { name: t('wifiPassword') })}
+                  hideLabel={t('hideSecret', { name: t('wifiPassword') })}
                   autoComplete="off"
                   spellCheck={false}
                 />

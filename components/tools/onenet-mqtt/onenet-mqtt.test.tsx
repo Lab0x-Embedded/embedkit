@@ -272,6 +272,54 @@ describe('oneNet · 三元组生成', () => {
   })
 })
 
+describe('oneNet · 密钥显隐', () => {
+  // aria-label 是 showSecret/hideSecret 填上字段名，从 messages 拼出来而不是写死中文
+  const label = (template: string, fieldName: string) => template.replace('{name}', fieldName)
+
+  it('设备密钥与 WiFi 密码默认都是隐藏的', () => {
+    renderTool()
+
+    expect((field('onenet-key') as HTMLInputElement).type).toBe('password')
+    expect((field('onenet-wifi-pwd') as HTMLInputElement).type).toBe('password')
+  })
+
+  it('点眼睛才看得到明文，且显隐不影响写入存储', () => {
+    renderTool()
+    fireEvent.change(field('onenet-key'), { target: { value: DEMO_KEY } })
+
+    // 隐藏状态下也得照常持久化 —— 别因为切了 type 把取值流程弄坏
+    expect(window.localStorage.getItem(ONENET_STORAGE_KEY)).toContain(DEMO_KEY)
+
+    fireEvent.click(screen.getByRole('button', { name: label(t.showSecret, t.deviceKey) }))
+    expect((field('onenet-key') as HTMLInputElement).type).toBe('text')
+    expect((field('onenet-key') as HTMLInputElement).value).toBe(DEMO_KEY)
+
+    fireEvent.click(screen.getByRole('button', { name: label(t.hideSecret, t.deviceKey) }))
+    expect((field('onenet-key') as HTMLInputElement).type).toBe('password')
+  })
+
+  it('两把眼睛各管各的：开一个不影响另一个', () => {
+    renderTool()
+
+    fireEvent.click(screen.getByRole('button', { name: label(t.showSecret, t.deviceKey) }))
+
+    expect((field('onenet-key') as HTMLInputElement).type).toBe('text')
+    expect((field('onenet-wifi-pwd') as HTMLInputElement).type).toBe('password')
+  })
+
+  it('显隐状态不进存储：刷新后回到隐藏', () => {
+    renderTool()
+    fireEvent.click(screen.getByRole('button', { name: label(t.showSecret, t.deviceKey) }))
+    expect((field('onenet-key') as HTMLInputElement).type).toBe('text')
+
+    cleanup()
+    renderTool()
+
+    expect((field('onenet-key') as HTMLInputElement).type).toBe('password')
+    expect(window.localStorage.getItem(ONENET_STORAGE_KEY)).not.toContain('revealed')
+  })
+})
+
 describe('oneNet · 属性上报 JSON', () => {
   const paramsInput = () => document.getElementById('onenet-params') as HTMLTextAreaElement
 
