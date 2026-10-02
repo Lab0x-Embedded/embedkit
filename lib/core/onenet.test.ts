@@ -16,6 +16,7 @@ import {
   ONENET_HOSTS,
   ONENET_TOKEN_VERSION,
   OneNetError,
+  parsePropertyParams,
   percentEncode,
   signToken,
   timestampToDateTime,
@@ -202,17 +203,79 @@ describe('buildTopics', () => {
   })
 })
 
+describe('parsePropertyParams', () => {
+  it('解析一份正常的 params 对象', () => {
+    const result = parsePropertyParams('{"temperature":{"value":25.6}}')
+    expect(result).toEqual({ ok: true, params: { temperature: { value: 25.6 } } })
+  })
+
+  it('字符串值保持字符串，不被当成数字', () => {
+    const result = parsePropertyParams('{"status":{"value":"ok"}}')
+    expect(result.ok && result.params).toEqual({ status: { value: 'ok' } })
+  })
+
+  it('布尔与嵌套对象原样保留', () => {
+    const result = parsePropertyParams('{"relay":{"value":true},"geo":{"value":{"lat":31.2,"lon":121.5}}}')
+    if (!result.ok)
+      throw new Error(`不该失败：${result.code}`)
+    expect(result.params.relay).toEqual({ value: true })
+    expect(result.params.geo).toEqual({ value: { lat: 31.2, lon: 121.5 } })
+  })
+
+  it('空对象是合法的（先订 Topic、暂不上报数据）', () => {
+    expect(parsePropertyParams('{}')).toEqual({ ok: true, params: {} })
+  })
+
+  it('空串 / 只有空白 → empty', () => {
+    expect(parsePropertyParams('')).toEqual({ ok: false, code: 'empty' })
+    expect(parsePropertyParams('  \n\t ')).toEqual({ ok: false, code: 'empty' })
+  })
+
+  it('不是合法 JSON → invalid-json', () => {
+    expect(parsePropertyParams('{')).toEqual({ ok: false, code: 'invalid-json' })
+    expect(parsePropertyParams('temperature: 25.6')).toEqual({ ok: false, code: 'invalid-json' })
+    expect(parsePropertyParams('{"a":1,}')).toEqual({ ok: false, code: 'invalid-json' })
+  })
+
+  it('解析出来不是对象 → not-object（数组 / 数字 / 字符串 / null / 布尔）', () => {
+    for (const text of ['[]', '[1,2]', '42', '"x"', 'null', 'true']) {
+      const result = parsePropertyParams(text)
+      expect(result, `${text} 应当被判成 not-object`).toEqual({ ok: false, code: 'not-object' })
+    }
+  })
+
+  it('jS 对象字面量写法（键没加引号）也是非法 JSON', () => {
+    expect(parsePropertyParams('{temperature: 25.6}')).toEqual({ ok: false, code: 'invalid-json' })
+  })
+})
+
 describe('报文构造', () => {
-  it('属性上报报文结构', () => {
-    const payload = buildPropertyPayload([
-      { identifier: 'temperature', value: 25.6 },
-      { identifier: 'humidity', value: 60.2 },
-    ], '123456')
+  it('属性上报报文：直接吃一份 params 对象，外层 id 由工具补上', () => {
+    const payload = buildPropertyPayload({
+      temperature: { value: 25.6 },
+      humidity: { value: 60.2 },
+    }, '123456')
     expect(JSON.parse(payload)).toEqual({
       id: '123456',
       params: {
         temperature: { value: 25.6 },
         humidity: { value: 60.2 },
+      },
+    })
+  })
+
+  it('字符串 / 布尔 / 嵌套结构原样进报文，不被转成数字', () => {
+    const payload = buildPropertyPayload({
+      status: { value: 'ok' },
+      relay: { value: true },
+      geo: { value: { lat: 31.2, lon: 121.5 } },
+    }, '1')
+    expect(JSON.parse(payload)).toEqual({
+      id: '1',
+      params: {
+        status: { value: 'ok' },
+        relay: { value: true },
+        geo: { value: { lat: 31.2, lon: 121.5 } },
       },
     })
   })
@@ -229,7 +292,8 @@ describe('报文构造', () => {
 })
 
 describe('buildAtBlocks', () => {
-  const payload = buildPropertyPayload([{ identifier: 'temperature', value: 25.6 }], '123456')
+  /** 惰性构造：写在 describe 体内会在收集期执行，一处没实现整个文件都跑不起来 */
+  const makePayload = () => buildPropertyPayload({ temperature: { value: 25.6 } }, '123456')
   const reply = buildReplyPayload('123457')
 
   it('按顺序给出 网络 / MQTT / 订阅 / 上报 / 回复 / 备选 六段', () => {
@@ -239,7 +303,7 @@ describe('buildAtBlocks', () => {
       productId: DEMO_PRODUCT,
       deviceId: DEMO_DEVICE,
       token: 'TOKEN',
-      payload,
+      payload: makePayload(),
       replyPayload: reply,
     })
     expect(blocks.map(b => b.key)).toEqual(['network', 'mqtt', 'subscribe', 'publish', 'reply', 'fallback'])
@@ -252,7 +316,7 @@ describe('buildAtBlocks', () => {
       productId: DEMO_PRODUCT,
       deviceId: DEMO_DEVICE,
       token: 'TOKEN',
-      payload,
+      payload: makePayload(),
     })
     expect(blocks[0].lines).toEqual(['AT', 'AT+CWMODE=1', 'AT+CWJAP="MyWiFi","p@ss"word"'])
     expect(blocks[1].lines[0]).toBe(`AT+MQTTUSERCFG=0,1,"${DEMO_DEVICE}","${DEMO_PRODUCT}","TOKEN",0,0,""`)
@@ -266,15 +330,15 @@ describe('buildAtBlocks', () => {
       productId: 'pid',
       deviceId: 'did',
       token: 'T',
-      payload,
+      payload: makePayload(),
     })
     const subscribe = blocks.find(b => b.key === 'subscribe')!
     expect(subscribe.lines[0]).toBe('AT+MQTTSUB=0,"$sys/pid/did/thing/property/post/reply",0')
     expect(subscribe.lines[1]).toBe('AT+MQTTSUB=0,"$sys/pid/did/thing/property/set",0')
 
     const publish = blocks.find(b => b.key === 'publish')!
-    expect(publish.lines[0]).toBe(`AT+MQTTPUBRAW=0,"$sys/pid/did/thing/property/post",${jsonByteLength(payload)},0,0`)
-    expect(publish.lines[1]).toBe(payload)
+    expect(publish.lines[0]).toBe(`AT+MQTTPUBRAW=0,"$sys/pid/did/thing/property/post",${jsonByteLength(makePayload())},0,0`)
+    expect(publish.lines[1]).toBe(makePayload())
   })
 
   it('没有回复报文时不产生 reply 段', () => {
@@ -284,7 +348,7 @@ describe('buildAtBlocks', () => {
       productId: 'pid',
       deviceId: 'did',
       token: 'T',
-      payload,
+      payload: makePayload(),
     })
     expect(blocks.some(b => b.key === 'reply')).toBe(false)
   })

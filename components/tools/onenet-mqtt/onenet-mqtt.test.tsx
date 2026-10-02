@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { NextIntlClientProvider } from 'next-intl'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { onenetStore } from '@/lib/browser/onenet-store'
-import { buildOneNetConfig, dateTimeToTimestamp } from '@/lib/core/onenet'
+import { buildOneNetConfig, dateTimeToTimestamp, jsonByteLength } from '@/lib/core/onenet'
 import { ONENET_STORAGE_KEY } from '@/lib/core/onenet-store'
 import messages from '@/messages/zh.json'
 import { OneNetMqtt } from './onenet-mqtt'
@@ -269,6 +269,74 @@ describe('oneNet · 三元组生成', () => {
     await generateAndWait()
     expect(bodyText()).toContain(t.directionUp)
     expect(bodyText()).toContain(t.directionDown)
+  })
+})
+
+describe('oneNet · 属性上报 JSON', () => {
+  const paramsInput = () => document.getElementById('onenet-params') as HTMLTextAreaElement
+
+  it('默认填的就是那份温度/湿度示例', () => {
+    renderTool()
+    expect(JSON.parse(paramsInput().value)).toEqual({
+      temperature: { value: 25.6 },
+      humidity: { value: 60.2 },
+    })
+  })
+
+  it('非法 JSON → 报错、输入框标红、生成按钮禁用', async () => {
+    renderTool()
+    fillValidForm()
+    await generateAndWait()
+    // 先确认正常情况下是可用的，否则「禁用了」这条断言没有意义
+    expect((generateAtButton() as HTMLButtonElement).disabled).toBe(false)
+
+    fireEvent.change(paramsInput(), { target: { value: '{ 这不是 json' } })
+
+    expect(bodyText()).toContain(t.paramsInvalidJson)
+    expect(paramsInput().getAttribute('aria-invalid')).toBe('true')
+    expect((generateAtButton() as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('最外层不是对象 → 报错（数组 / 数字都算）', async () => {
+    renderTool()
+    fillValidForm()
+    await generateAndWait()
+
+    for (const value of ['[]', '42']) {
+      fireEvent.change(paramsInput(), { target: { value } })
+      expect(bodyText(), `${value} 应当被判错`).toContain(t.paramsNotObject)
+      expect((generateAtButton() as HTMLButtonElement).disabled).toBe(true)
+    }
+  })
+
+  it('清空 → 报错并禁用', async () => {
+    renderTool()
+    fillValidForm()
+    await generateAndWait()
+
+    fireEvent.change(paramsInput(), { target: { value: '   ' } })
+
+    expect(bodyText()).toContain(t.paramsEmpty)
+    expect((generateAtButton() as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('改 JSON 后 AT 指令里的 payload 与字节数都跟着变', async () => {
+    renderTool()
+    fillValidForm()
+    await generateAndWait()
+
+    const custom = '{"status": {"value": "ok"}, "relay": {"value": true}}'
+    fireEvent.change(paramsInput(), { target: { value: custom } })
+    expect(bodyText()).toContain(t.paramsHint)
+
+    fireEvent.click(generateAtButton())
+    await waitFor(() => expect(bodyText()).toContain(t.atBlock.publish))
+
+    // 字符串与布尔都按 JSON 原样进报文，不被转成数字
+    const expectedPayload = JSON.stringify({ id: '1', params: JSON.parse(custom) })
+    expect(bodyText()).toContain(expectedPayload)
+    // 字节数必须按**新** payload 算，写死 25.6 那版的话这里就对不上
+    expect(bodyText()).toContain(`,${jsonByteLength(expectedPayload)},0,0`)
   })
 })
 

@@ -10,6 +10,8 @@
  * 想改回「敏感字段不落盘」的话，记得同步改 messages 里的 deviceKeyNote / noteLocal
  * 和 SKILL 的约定第 4 条，再改这里的白名单。
  *
+ * 属性上报的 params 以**原始文本**存（propertyParams），不是解析后的对象 —— 见该字段注释。
+ *
  * **过期时间（date/time）刻意不进存储**：它是个绝对时间点，存下来下次打开就成了
  * 过去的时间，Token 直接是废的。留空表示「从现在起 N 天」，才对。
  */
@@ -24,13 +26,21 @@ export interface OneNetFormState {
   method: OneNetMethod
   wifiSsid: string
   wifiPassword: string
-  tempId: string
-  tempValue: string
-  humiId: string
-  humiValue: string
+  /**
+   * 属性上报的 params，**存的是文本框里的原始文本**，不是解析结果。
+   * 存原始文本的原因：可能存着半截没写完的 JSON，重开还得能接着改；
+   * 存解析结果的话，一处语法错误就会把用户写的东西整个丢掉。
+   */
+  propertyParams: string
 }
 
 export const ONENET_STORAGE_KEY = 'embedkit.onenet.v1'
+
+/** 默认示例：就是原来那两组写死的温度/湿度，换成可以直接改的 JSON */
+const DEFAULT_PROPERTY_PARAMS = `{
+  "temperature": { "value": 25.6 },
+  "humidity": { "value": 60.2 }
+}`
 
 export const DEFAULT_ONENET_STATE: OneNetFormState = {
   productId: '',
@@ -39,10 +49,7 @@ export const DEFAULT_ONENET_STATE: OneNetFormState = {
   method: 'sha1',
   wifiSsid: '',
   wifiPassword: '',
-  tempId: 'temperature',
-  tempValue: '25.6',
-  humiId: 'humidity',
-  humiValue: '60.2',
+  propertyParams: DEFAULT_PROPERTY_PARAMS,
 }
 
 const METHODS: OneNetMethod[] = ['sha1', 'sha256']
@@ -54,10 +61,7 @@ const TEXT_FIELDS = [
   'deviceKey',
   'wifiSsid',
   'wifiPassword',
-  'tempId',
-  'tempValue',
-  'humiId',
-  'humiValue',
+  'propertyParams',
 ] as const
 
 /** 校验从本地存储读回来的状态；坏值逐项回退成默认，保证 UI 不炸 */

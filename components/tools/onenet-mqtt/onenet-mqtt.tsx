@@ -19,6 +19,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
 import { onenetStore } from '@/lib/browser/onenet-store'
 import {
   buildAtBlocks,
@@ -29,6 +30,7 @@ import {
   expiryFromNow,
   flattenAtBlocks,
   ONENET_HOSTS,
+  parsePropertyParams,
   timestampToDateTime,
 } from '@/lib/core/onenet'
 import { cn } from '@/lib/utils'
@@ -54,12 +56,15 @@ export function OneNetMqtt() {
     onenetStore.getServerSnapshot,
   )
   const [expiry, setExpiry] = useState<ExpiryState>(EMPTY_EXPIRY)
+  /** 属性上报文本的解析结果：边打边算，非法时禁掉生成按钮并给出原因 */
+  const params = useMemo(() => parsePropertyParams(form.propertyParams), [form.propertyParams])
   const [result, setResult] = useState<OneNetBuild | null>(null)
   const [blocks, setBlocks] = useState<AtBlock[] | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const set = (key: keyof OneNetFormState) => (event: ChangeEvent<HTMLInputElement>) =>
-    onenetStore.update({ [key]: event.target.value })
+  const set = (key: keyof OneNetFormState) =>
+    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      onenetStore.update({ [key]: event.target.value })
 
   /**
    * 用户填了日期/时间才是「明确的过期时间」；没填就按点击时的「现在 + 30 天」算，
@@ -128,10 +133,10 @@ export function OneNetMqtt() {
     if (!result?.ok)
       return
 
-    const payload = buildPropertyPayload([
-      { identifier: form.tempId.trim() || 'temperature', value: Number(form.tempValue) || 0 },
-      { identifier: form.humiId.trim() || 'humidity', value: Number(form.humiValue) || 0 },
-    ], '1')
+    if (!params.ok)
+      return
+
+    const payload = buildPropertyPayload(params.params, '1')
 
     setBlocks(buildAtBlocks({
       wifiSsid: form.wifiSsid.trim() || 'MyWiFi',
@@ -387,35 +392,36 @@ export function OneNetMqtt() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t('payloadSection')}</Label>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {([['tempId', 'tempValue'], ['humiId', 'humiValue']] as const).map(([idKey, valueKey]) => (
-                  <div key={idKey} className="flex gap-2">
-                    <Input
-                      className="font-mono text-xs"
-                      value={form[idKey]}
-                      onChange={set(idKey)}
-                      placeholder={t('identifier')}
-                      aria-label={t('identifier')}
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                    <Input
-                      className="w-24 shrink-0 font-mono text-xs"
-                      value={form[valueKey]}
-                      onChange={set(valueKey)}
-                      placeholder={t('value')}
-                      aria-label={t('value')}
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                  </div>
-                ))}
-              </div>
+              <Label htmlFor="onenet-params">{t('payloadSection')}</Label>
+              <Textarea
+                id="onenet-params"
+                className="min-h-28 font-mono text-xs leading-relaxed"
+                value={form.propertyParams}
+                onChange={set('propertyParams')}
+                aria-invalid={!params.ok}
+                aria-describedby="onenet-params-note"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              {params.ok
+                ? (
+                    <p id="onenet-params-note" className="text-xs text-muted-foreground">
+                      {t('paramsHint')}
+                    </p>
+                  )
+                : (
+                    <p id="onenet-params-note" className="text-xs text-destructive">
+                      {{
+                        'empty': t('paramsEmpty'),
+                        'invalid-json': t('paramsInvalidJson'),
+                        'not-object': t('paramsNotObject'),
+                      }[params.code]}
+                    </p>
+                  )}
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button onClick={handleGenerateAt} disabled={!result?.ok}>
+              <Button onClick={handleGenerateAt} disabled={!result?.ok || !params.ok}>
                 <Terminal className="size-4" />
                 {t('generateAt')}
               </Button>

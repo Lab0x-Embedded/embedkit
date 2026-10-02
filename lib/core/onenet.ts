@@ -229,20 +229,46 @@ export function jsonByteLength(text: string): number {
   return new TextEncoder().encode(text).length
 }
 
-export interface ThingPropertyEntry {
-  identifier: string
-  value: number | string | boolean
+export type ParseParamsErrorCode = 'empty' | 'invalid-json' | 'not-object'
+
+export type ParseParamsResult
+  = | { ok: true, params: Record<string, unknown> }
+    | { ok: false, code: ParseParamsErrorCode }
+
+/**
+ * 解析属性上报的 params —— 也就是文本框里那段 JSON。
+ *
+ * 只认「一个 JSON 对象」：外层 `{"id":…,"params":…}` 由 buildPropertyPayload 补上，
+ * 使用者只写里面那层，少敲一层也就不容易写错。
+ *
+ * 值的类型完全由 JSON 自己表达（`25.6` 数字、`"ok"` 字符串、`true` 布尔、
+ * 嵌套对象也行），所以不需要额外的类型下拉 —— 这是当初把逐字段输入框
+ * 换成直接写 JSON 的主要收益。
+ */
+export function parsePropertyParams(text: string): ParseParamsResult {
+  if (!text.trim())
+    return { ok: false, code: 'empty' }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  }
+  catch {
+    return { ok: false, code: 'invalid-json' }
+  }
+
+  // 数组和 null 的 typeof 也是 'object'，得单独排掉
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed))
+    return { ok: false, code: 'not-object' }
+
+  return { ok: true, params: parsed as Record<string, unknown> }
 }
 
-/** 属性上报报文：{ "id": "<id>", "params": { "<identifier>": { "value": <v> } } } */
+/** 属性上报报文：{ "id": "<id>", "params": <解析出来的 params> } */
 export function buildPropertyPayload(
-  entries: readonly ThingPropertyEntry[],
+  params: Record<string, unknown>,
   id: string | number = '1',
 ): string {
-  const params: Record<string, { value: number | string | boolean }> = {}
-  for (const entry of entries)
-    params[entry.identifier] = { value: entry.value }
-
   return JSON.stringify({ id: String(id), params })
 }
 

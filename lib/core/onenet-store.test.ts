@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { parsePropertyParams } from './onenet'
 import {
   createOneNetStore,
   DEFAULT_ONENET_STATE,
@@ -17,6 +18,23 @@ function fakeStorage(initial: Record<string, string> = {}) {
 }
 
 describe('onenetStore · 持久化', () => {
+  it('默认的属性上报文本就是那份温度/湿度示例，且能解析', () => {
+    const parsed = parsePropertyParams(DEFAULT_ONENET_STATE.propertyParams)
+    expect(parsed).toEqual({
+      ok: true,
+      params: { temperature: { value: 25.6 }, humidity: { value: 60.2 } },
+    })
+  })
+
+  it('半截没写完的 JSON 也原样存住（重开还能接着改，不因为解析失败被清掉）', () => {
+    const storage = fakeStorage()
+    const half = '{"temperature": {"value":'
+    createOneNetStore(storage).update({ propertyParams: half })
+
+    expect(createOneNetStore(storage).getSnapshot().propertyParams).toBe(half)
+    expect(parsePropertyParams(half).ok).toBe(false)
+  })
+
   it('没有 storage 时（SSR）读到的就是默认值', () => {
     const store = createOneNetStore(null)
     expect(store.getSnapshot()).toEqual(DEFAULT_ONENET_STATE)
@@ -37,11 +55,11 @@ describe('onenetStore · 持久化', () => {
 
   it('换一个 store 实例能从同一份存储里读回来（这就是「刷新还在」）', () => {
     const storage = fakeStorage()
-    createOneNetStore(storage).update({ wifiSsid: 'LabWiFi', tempValue: '26.1' })
+    createOneNetStore(storage).update({ wifiSsid: 'LabWiFi', propertyParams: '{"a":{"value":1}}' })
 
     const reopened = createOneNetStore(storage)
     expect(reopened.getSnapshot().wifiSsid).toBe('LabWiFi')
-    expect(reopened.getSnapshot().tempValue).toBe('26.1')
+    expect(reopened.getSnapshot().propertyParams).toBe('{"a":{"value":1}}')
   })
 
   it('设备密钥与 WiFi 密码也会存下来（明确的产品决定，别偷偷改回不存）', () => {
@@ -110,7 +128,7 @@ describe('onenetStore · 坏数据兜底', () => {
     expect(state.productId).toBe('keep-me')
     expect(state.deviceId).toBe(DEFAULT_ONENET_STATE.deviceId)
     expect(state.method).toBe(DEFAULT_ONENET_STATE.method)
-    expect(state.tempId).toBe(DEFAULT_ONENET_STATE.tempId)
+    expect(state.propertyParams).toBe(DEFAULT_ONENET_STATE.propertyParams)
   })
 
   it('normalize 接受 null / 非对象 / 空对象', () => {
