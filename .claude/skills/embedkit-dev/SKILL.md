@@ -59,6 +59,11 @@ public/preview.png           README 里的首页预览图
    - `components/tools/<slug>/`（`'use client'`）
    - `app/[locale]/tools/<slug>/page.tsx`（照抄现有页面，套 `ToolShell`）
    `lib/i18n.test.ts` 会强制前两步对齐，漏了直接红。
+
+   **外链工具**（功能在别的站点）同理，多两件事：`ToolMeta.externalUrl` 填外站地址、
+   `category` 用 `ext`，组件做成「拼深链 + 跳转」的入口页而不是真工具。
+   现有例子 `pin-lookup` → PinAtlas：URL 拼装全在 `core/pinatlas.ts`，
+   **纯函数 + 单测**，别把拼接逻辑写进组件。
 3. **不做假入口**：没实现的工具在首页是灰色禁用卡并标注「规划中」，不给点了报错的按钮；只有 `'done'` 才会进 sitemap。
 4. **纯本地计算**：工具页不发任何请求；敏感输入（密钥等）只留在内存里，不写 localStorage。
 5. **文案进 messages**：组件里不写死中英文；测试也从 `messages/zh.json` 取断言值，改文案不会让测试变红。
@@ -110,7 +115,7 @@ CI 和用户自己的终端没有这个限制。
 ```bash
 pnpm lint           # eslint（@antfu/eslint-config）
 pnpm typecheck      # tsc --noEmit
-pnpm test           # vitest：14 个文件 / 293 用例
+pnpm test           # vitest：16 个文件 / 319 用例
 pnpm build          # next build（注意坑 2、坑 3）
 ```
 
@@ -122,7 +127,11 @@ pnpm build          # next build（注意坑 2、坑 3）
 
 ## 五、当前进度
 
-**7 个工具全部可用，首页没有灰色占位卡。**
+**7 个本地工具全部可用**，另有 1 个外链入口（`ext` 分类），首页没有灰色占位卡。
+
+工具分两类，统计口径不同：**本地工具**（功能在本站内完成）计入「N 个可用」；
+**外链工具**（`ToolMeta.externalUrl` 有值，功能在别的站点）单独计一个徽章，**不混进那个数字** ——
+否则「8 个可用」里有一个其实在本站干不了活。
 
 | 分类 | slug | 关键实现 | 核心库 |
 | --- | --- | --- | --- |
@@ -133,6 +142,7 @@ pnpm build          # next build（注意坑 2、坑 3）
 | proto | `modbus-frame` | 8 功能码、RTU/TCP 组帧 + 拆帧校验 | `core/modbus.ts`（CRC 复用 `core/crc.ts`） |
 | proto | `serial` | Web Serial 收发、分包合并、快捷指令 | `core/serial.ts` + `browser/serial.ts` |
 | cloud | `onenet-mqtt` | MQTT 三元组签名、物模型 Topic、ESP-AT | `core/onenet.ts` |
+| ext | `pin-lookup` | 拼 PinAtlas 深链跳转（**本站不抓引脚数据、不发请求**） | `core/pinatlas.ts` |
 
 工程侧已做：sitemap / robots、canonical + hreflang + metadataBase、站内 404（含未匹配路由的 `global-not-found`）、错误边界、i18n 一致性 + ICU 校验、`needsLocalRuntime` 提示。
 
@@ -150,6 +160,9 @@ pnpm build          # next build（注意坑 2、坑 3）
 **下一步候选**（按性价比）：IEEE 754 浮点解析 · STM32 定时器 / 波特率计算 · 校验和工厂（累加和 / XOR / BCC / LRC）· CAN 报文位域解析 · 自定义协议帧构建器 · AT 指令速查。
 
 **明确不做**（需要后端 / 长连接 / 实机）：逻辑分析仪、在线 MQTT 客户端、Modbus 实机主站。
+
+**已外链的**：芯片引脚查询 → PinAtlas（`core/pinatlas.ts`）。这类「隔壁已经有且维护得不错」
+的能力一律走 `ext` 外链，不要在本站重建一份数据。
 
 **开工顺序建议**：先补上面「已知的债」里的前两条（组件测试 + E2E），再开新工具 —— 现在每加一个工具都是纯手工回归。
 

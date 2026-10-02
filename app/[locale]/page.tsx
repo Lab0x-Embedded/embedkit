@@ -6,7 +6,7 @@ import { ToolCard } from '@/components/tools/tool-card'
 import { Badge } from '@/components/ui/badge'
 import { routing } from '@/i18n/routing'
 import { pageAlternates } from '@/lib/site'
-import { categories, countByStatus, getToolsByCategory } from '@/lib/tools-meta'
+import { categories, countByStatus, countExternal, getToolsByCategory } from '@/lib/tools-meta'
 
 /** 首页自己的 canonical 与 hreflang（title / description 由 layout 的默认值兜底） */
 export async function generateMetadata({
@@ -37,6 +37,8 @@ export default async function HomePage({
 
   const availableCount = countByStatus('done')
   const plannedCount = countByStatus('planned')
+  // 外链工具单独计数：它们不是本站的能力，别混进「N 个可用」
+  const externalCount = countExternal()
 
   return (
     <div className="space-y-12">
@@ -55,6 +57,11 @@ export default async function HomePage({
           {plannedCount > 0 && (
             <Badge variant="outline" className="rounded-4xl">
               {t('planned', { count: plannedCount })}
+            </Badge>
+          )}
+          {externalCount > 0 && (
+            <Badge variant="secondary" className="rounded-4xl">
+              {t('external', { count: externalCount })}
             </Badge>
           )}
           <span className="text-xs text-muted-foreground">{t('privacyNote')}</span>

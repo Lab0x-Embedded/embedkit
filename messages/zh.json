@@ -20,6 +20,9 @@
     "openTool": "打开工具",
     "statusDone": "可用",
     "statusPlanned": "规划中",
+    "statusExternal": "外部",
+    "openExternal": "去 PinAtlas",
+    "external": "{count} 个外部工具",
     "localRuntimeHint": "需要本机浏览器硬件能力",
     "privacyNote": "所有计算在浏览器本地完成，输入内容不上传服务器。"
   },
@@ -27,7 +30,8 @@
     "calc": "计算 / 数值",
     "bytes": "字节流 / 编码",
     "proto": "协议 / 通信",
-    "cloud": "云平台 / 配置"
+    "cloud": "云平台 / 配置",
+    "ext": "外部工具"
   },
   "Tools": {
     "base-converter": {
@@ -57,6 +61,10 @@
     "modbus-frame": {
       "name": "Modbus 报文生成与校验",
       "desc": "RTU 与 TCP 读写寄存器 / 线圈报文，自动算 CRC16 与 MBAP 头。"
+    },
+    "pin-lookup": {
+      "name": "芯片引脚查询",
+      "desc": "填型号（可带引脚 / 封装）跳转到 PinAtlas，看封装引脚图、复用功能与 AF 号 —— 数据在隔壁站点，本站只做入口。"
     }
   },
   "Radix": {
@@ -502,6 +510,40 @@
       "empty": "请输入一个值",
       "badChar": "「{char}」不是合法的数字",
       "outOfRange": "{detail} 超出了 {width} 位的范围"
+    }
+  },
+  "PinLookup": {
+    "query": "查询条件",
+    "lead": "填型号 → 拼出 PinAtlas 深链 → 新标签页打开。本站不抓引脚数据，也不发任何请求。",
+    "chip": "芯片型号",
+    "chipPlaceholder": "例如 STM32F103C8Tx",
+    "chipNote": "用数据集里的 ID 形式：封装与温度等级写成小写 x，例如 STM32F103C8Tx —— 不是订货号 STM32F103C8T6。",
+    "suggestion": "这是订货号。数据集里用的是 {suggested}，要改成它吗？",
+    "suggestionUse": "改用建议值",
+    "pin": "引脚（可选）",
+    "pinPlaceholder": "例如 PA9",
+    "pinNote": "填了就跳到该引脚的详情。",
+    "variant": "封装变体（可选）",
+    "variantPlaceholder": "例如 LQFP48",
+    "variantNote": "同一型号有多个封装时用来切换。",
+    "examples": "常用型号",
+    "examplesNote": "这些型号都对着 PinAtlas 数据集核对过，能直接命中。",
+    "result": "跳转地址",
+    "target": "将打开",
+    "open": "在 PinAtlas 打开",
+    "emptyHint": "填入型号后这里会给出目标地址。",
+    "copy": "复制",
+    "copied": "已复制",
+    "about": "说明",
+    "noteExternal": "引脚数据由 PinAtlas（{origin}）提供，EmbedKit 不重复维护这份数据。",
+    "noteFormat": "数据集用 x 占位封装与温度等级；直接填订货号会被 PinAtlas 静默退回默认型号，所以这里会提示纠正。",
+    "noteData": "收录约 2700 个型号、31 万个引脚，覆盖 STM32 主流家族。",
+    "notePrivacy": "只在点击按钮时才跳转，本页自身不发任何请求。",
+    "error": {
+      "emptyChip": "请输入芯片型号",
+      "badChip": "「{detail}」不是合法的型号（只允许字母、数字与 . _ - +）",
+      "badPin": "「{detail}」不是合法的引脚名",
+      "badVariant": "「{detail}」不是合法的封装名"
     }
   },
   "Footer": {

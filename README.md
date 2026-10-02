@@ -9,7 +9,7 @@
 
 ## 工具清单
 
-七个工具全部可用，首页没有灰色占位卡。
+七个本地工具全部可用，另有一个跳转到 PinAtlas 的外部入口。
 
 | 分类 | 工具 | 说明 |
 | --- | --- | --- |
@@ -20,9 +20,13 @@
 | 协议 / 通信 | **Modbus 报文生成与校验** `/tools/modbus-frame` | 8 个常用功能码，RTU（自动补 CRC16）与 TCP（自动补 MBAP 头）；也能把收到的帧拆成字段并校验 CRC |
 | 协议 / 通信 | **串口监视器** `/tools/serial` | 浏览器直连串口（Web Serial）：HEX / 文本 / ANSI 彩色日志、分包合并、定时发送、快捷指令、拔插自动重连 |
 | 云平台 / 配置 | **OneNET MQTT 参数生成** `/tools/onenet-mqtt` | ClientID / Username / Password 签名、物模型 Topic、ESP-AT 指令序列 |
+| 外部工具 | **芯片引脚查询** `/tools/pin-lookup` | 填型号（可带引脚 / 封装）跳转到 [PinAtlas](https://pinatlas.ryanuo.cc)，看封装引脚图、复用功能与 AF 号 —— 引脚数据在隔壁站点维护，本站只做入口，不重复造 |
 
 > 串口监视器需要桌面版 Chrome / Edge（Web Serial 不支持 Safari、Firefox），
 > 且必须在 https 或 localhost 下使用。查到的串口只能由你手动授权，页面不会主动打开设备。
+>
+> 芯片引脚查询的目标站用的是 CubeMX 形式的型号 ID（封装与温度等级写成小写 `x`，例如
+> `STM32F103C8Tx`），不是订货号（`STM32F103C8T6`）。贴订货号时页面会提示纠正。
 
 ## 技术栈
 

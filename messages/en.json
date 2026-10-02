@@ -20,6 +20,9 @@
     "openTool": "Open tool",
     "statusDone": "Ready",
     "statusPlanned": "Planned",
+    "statusExternal": "External",
+    "openExternal": "Go to PinAtlas",
+    "external": "{count, plural, one {# external tool} other {# external tools}}",
     "localRuntimeHint": "Needs local browser hardware access",
     "privacyNote": "All computation happens in your browser. Nothing you type is uploaded."
   },
@@ -27,7 +30,8 @@
     "calc": "Math / Numeric",
     "bytes": "Byte streams / Encoding",
     "proto": "Protocols / Comms",
-    "cloud": "Cloud / Config"
+    "cloud": "Cloud / Config",
+    "ext": "External tools"
   },
   "Tools": {
     "base-converter": {
@@ -57,6 +61,10 @@
     "modbus-frame": {
       "name": "Modbus Frame Builder",
       "desc": "Build RTU and TCP read/write frames with automatic CRC16 and MBAP header."
+    },
+    "pin-lookup": {
+      "name": "Chip Pin Lookup",
+      "desc": "Enter a part number (optionally a pin / package) and jump to PinAtlas for the package pinout, alternate functions and AF numbers — the data lives on the other site, this is just the doorway."
     }
   },
   "Radix": {
@@ -242,7 +250,7 @@
     "error": {
       "empty": "Please enter a value",
       "noDigits": "No digits after the prefix",
-      "badDigit": "'{char}' is not a valid {radix} digit",
+      "badDigit": "“{char}” is not a valid {radix} digit",
       "prefixMismatch": "The 0{prefix} prefix conflicts with the selected base ({radix})",
       "invalidFormat": "Malformed number"
     },
@@ -502,6 +510,40 @@
       "empty": "Enter a value first",
       "badChar": "“{char}” is not a valid digit",
       "outOfRange": "{detail} does not fit in {width} bits"
+    }
+  },
+  "PinLookup": {
+    "query": "Query",
+    "lead": "Enter a part number, get a PinAtlas deep link, open it in a new tab. This site holds no pin data and makes no requests.",
+    "chip": "Chip",
+    "chipPlaceholder": "e.g. STM32F103C8Tx",
+    "chipNote": "Use the dataset's ID form: the package and temperature grade become a lowercase x, e.g. STM32F103C8Tx — not the orderable part number STM32F103C8T6.",
+    "suggestion": "That is an orderable part number. The dataset uses {suggested} — switch to it?",
+    "suggestionUse": "Use suggestion",
+    "pin": "Pin (optional)",
+    "pinPlaceholder": "e.g. PA9",
+    "pinNote": "Fills in the pin detail view.",
+    "variant": "Package variant (optional)",
+    "variantPlaceholder": "e.g. LQFP48",
+    "variantNote": "Switches between packages of the same die.",
+    "examples": "Common parts",
+    "examplesNote": "Every one of these was checked against the PinAtlas dataset and resolves directly.",
+    "result": "Target URL",
+    "target": "Will open",
+    "open": "Open in PinAtlas",
+    "emptyHint": "Enter a part number and the target URL shows up here.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "about": "Notes",
+    "noteExternal": "Pin data comes from PinAtlas ({origin}); EmbedKit deliberately does not maintain a second copy.",
+    "noteFormat": "The dataset uses x to stand in for the package and temperature grade; pasting an orderable part number makes PinAtlas silently fall back to its default chip, so this page suggests the fix.",
+    "noteData": "About 2700 chips and 310k pins, covering the mainstream STM32 families.",
+    "notePrivacy": "Nothing happens until you press the button — this page itself makes no requests.",
+    "error": {
+      "emptyChip": "Enter a chip part number",
+      "badChip": "“{detail}” is not a valid part number (letters, digits and . _ - + only)",
+      "badPin": "“{detail}” is not a valid pin name",
+      "badVariant": "“{detail}” is not a valid package name"
     }
   },
   "Footer": {
