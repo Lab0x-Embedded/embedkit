@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { NextIntlClientProvider } from 'next-intl'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { onenetStore } from '@/lib/browser/onenet-store'
 import { buildOneNetConfig, dateTimeToTimestamp } from '@/lib/core/onenet'
+import { ONENET_STORAGE_KEY } from '@/lib/core/onenet-store'
 import messages from '@/messages/zh.json'
 import { OneNetMqtt } from './onenet-mqtt'
 
@@ -78,7 +80,63 @@ async function generateAndWait() {
   await waitFor(() => expect(screen.getByText(t.clientId)).toBeTruthy())
 }
 
+/**
+ * store 是模块级单例、而且会写 localStorage，所以用例之间会把填过的表单带过去。
+ * 每个用例开始前清干净，否则「缺产品 ID」这种校验用例会因为上一轮填过而直接通过。
+ */
+beforeEach(() => {
+  onenetStore.reset()
+})
+
 afterEach(cleanup)
+
+describe('oneNet · 本地持久化', () => {
+  /**
+   * 这里只断言「真的写进了 localStorage」这个可观测事实。
+   *
+   * 别写成「remount 之后值还在」—— 那会被 store 的内存缓存蒙混过关：
+   * 把持久化整个关掉，这种用例照样全绿（实测过）。真正的「换实例能读回来」
+   * 由 lib/core/onenet-store.test.ts 覆盖，那边是 watch 着测试失败写出来的。
+   */
+  const saved = () => window.localStorage.getItem(ONENET_STORAGE_KEY) ?? ''
+
+  it('在表单里输入会实时写进 localStorage', () => {
+    renderTool()
+    fireEvent.change(field('onenet-product'), { target: { value: DEMO_PRODUCT } })
+    fireEvent.change(field('onenet-device'), { target: { value: DEMO_DEVICE } })
+
+    expect(JSON.parse(saved()).productId).toBe(DEMO_PRODUCT)
+    expect(JSON.parse(saved()).deviceId).toBe(DEMO_DEVICE)
+  })
+
+  it('设备密钥与 WiFi 密码也写进去（明确的产品决定）', () => {
+    renderTool()
+    fireEvent.change(field('onenet-key'), { target: { value: DEMO_KEY } })
+
+    expect(JSON.parse(saved()).deviceKey).toBe(DEMO_KEY)
+  })
+
+  it('过期时间不写进存储（绝对时间点存下来下次就是过期的）', () => {
+    renderTool()
+    fireEvent.change(dateInput(), { target: { value: FIXED_DATE } })
+    fireEvent.change(timeInput(), { target: { value: FIXED_TIME } })
+
+    expect(saved()).not.toContain(FIXED_DATE)
+    expect(JSON.parse(saved()).date).toBeUndefined()
+  })
+
+  it('重置把存储里的密钥也擦掉（共用电脑要能清干净）', () => {
+    renderTool()
+    fireEvent.change(field('onenet-product'), { target: { value: DEMO_PRODUCT } })
+    fireEvent.change(field('onenet-key'), { target: { value: DEMO_KEY } })
+    expect(saved()).toContain(DEMO_KEY)
+
+    fireEvent.click(screen.getByRole('button', { name: t.reset }))
+
+    expect(saved()).not.toContain(DEMO_KEY)
+    expect(JSON.parse(saved()).productId).toBe('')
+  })
+})
 
 describe('oneNet · 初始状态', () => {
   it('结果区是空提示，AT 按钮不可用并给出提示', () => {

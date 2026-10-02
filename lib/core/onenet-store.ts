@@ -1,0 +1,145 @@
+/**
+ * OneNET 页面表单的本地持久化。
+ *
+ * 和串口助手用的是同一套模式（见 lib/core/serial-store.ts）：
+ * 纯工厂 + 可注入的 storage，方便在 node 里用假存储单测；
+ * 组件侧用 useSyncExternalStore 消费，SSR 走 getServerSnapshot 保证 hydration 一致。
+ *
+ * **为什么密钥和 WiFi 密码也存**：这是明确的产品决定（用户要求「都持久化，在本地没事」）。
+ * 所以页面上必须写明这一点，并且「重置」要能一键清干净 —— 否则就是在误导使用者。
+ * 想改回「敏感字段不落盘」的话，记得同步改 messages 里的 deviceKeyNote / noteLocal
+ * 和 SKILL 的约定第 4 条，再改这里的白名单。
+ *
+ * **过期时间（date/time）刻意不进存储**：它是个绝对时间点，存下来下次打开就成了
+ * 过去的时间，Token 直接是废的。留空表示「从现在起 N 天」，才对。
+ */
+
+import type { OneNetMethod } from './onenet'
+import type { StorageLike } from './serial-store'
+
+export interface OneNetFormState {
+  productId: string
+  deviceId: string
+  deviceKey: string
+  method: OneNetMethod
+  wifiSsid: string
+  wifiPassword: string
+  tempId: string
+  tempValue: string
+  humiId: string
+  humiValue: string
+}
+
+export const ONENET_STORAGE_KEY = 'embedkit.onenet.v1'
+
+export const DEFAULT_ONENET_STATE: OneNetFormState = {
+  productId: '',
+  deviceId: '',
+  deviceKey: '',
+  method: 'sha1',
+  wifiSsid: '',
+  wifiPassword: '',
+  tempId: 'temperature',
+  tempValue: '25.6',
+  humiId: 'humidity',
+  humiValue: '60.2',
+}
+
+const METHODS: OneNetMethod[] = ['sha1', 'sha256']
+
+/** 允许从存储里读回来的字符串字段（date/time 不在此列，见文件头注释） */
+const TEXT_FIELDS = [
+  'productId',
+  'deviceId',
+  'deviceKey',
+  'wifiSsid',
+  'wifiPassword',
+  'tempId',
+  'tempValue',
+  'humiId',
+  'humiValue',
+] as const
+
+/** 校验从本地存储读回来的状态；坏值逐项回退成默认，保证 UI 不炸 */
+export function normalizeOneNetState(raw: unknown): OneNetFormState {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw))
+    return DEFAULT_ONENET_STATE
+
+  const source = raw as Record<string, unknown>
+  const state: OneNetFormState = { ...DEFAULT_ONENET_STATE }
+
+  for (const field of TEXT_FIELDS) {
+    const value = source[field]
+    if (typeof value === 'string')
+      state[field] = value
+  }
+
+  if (METHODS.includes(source.method as OneNetMethod))
+    state.method = source.method as OneNetMethod
+
+  return state
+}
+
+export interface OneNetStore {
+  /** 客户端快照（读本地存储并缓存，避免每次渲染都 JSON.parse） */
+  getSnapshot: () => OneNetFormState
+  /** 服务端/hydration 快照：固定默认值，保证首屏与 SSG 的 HTML 一致 */
+  getServerSnapshot: () => OneNetFormState
+  subscribe: (listener: () => void) => () => void
+  update: (patch: Partial<OneNetFormState>) => void
+  /** 清回默认值，**同时清掉存储**（共用电脑时靠它擦掉密钥） */
+  reset: () => void
+}
+
+export function createOneNetStore(
+  storage: StorageLike | null,
+  key = ONENET_STORAGE_KEY,
+): OneNetStore {
+  let cache: OneNetFormState | null = null
+  const listeners = new Set<() => void>()
+
+  const read = (): OneNetFormState => {
+    if (!storage)
+      return DEFAULT_ONENET_STATE
+    try {
+      const raw = storage.getItem(key)
+      if (!raw)
+        return DEFAULT_ONENET_STATE
+      return normalizeOneNetState(JSON.parse(raw))
+    }
+    catch {
+      // 存储坏了（用户手改、旧版本格式）就当默认值，不打断使用
+      return DEFAULT_ONENET_STATE
+    }
+  }
+
+  const commit = (next: OneNetFormState) => {
+    cache = next
+    try {
+      storage?.setItem(key, JSON.stringify(next))
+    }
+    catch {
+      // 隐私模式 / 配额满：状态仍在本会话生效
+    }
+    for (const listener of listeners)
+      listener()
+  }
+
+  return {
+    getSnapshot: () => {
+      cache ??= read()
+      return cache
+    },
+    getServerSnapshot: () => DEFAULT_ONENET_STATE,
+    subscribe: (listener) => {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
+    },
+    update: (patch) => {
+      commit({ ...cache ?? read(), ...patch })
+    },
+    reset: () => {
+      commit({ ...DEFAULT_ONENET_STATE })
+    },
+  }
+}

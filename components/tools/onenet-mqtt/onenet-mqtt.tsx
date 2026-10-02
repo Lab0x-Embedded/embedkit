@@ -2,9 +2,10 @@
 
 import type { ChangeEvent } from 'react'
 import type { AtBlock, OneNetBuild, OneNetErrorCode, OneNetMethod } from '@/lib/core/onenet'
+import type { OneNetFormState } from '@/lib/core/onenet-store'
 import { KeyRound, RotateCcw, Terminal } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useSyncExternalStore } from 'react'
 import { CopyButton } from '@/components/tools/copy-button'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,6 +19,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { onenetStore } from '@/lib/browser/onenet-store'
 import {
   buildAtBlocks,
   buildOneNetConfig,
@@ -34,54 +36,38 @@ import { cn } from '@/lib/utils'
 const METHODS: OneNetMethod[] = ['sha1', 'sha256']
 const DAY_PRESETS = [1, 30, 365] as const
 
-interface FormState {
-  productId: string
-  deviceId: string
-  deviceKey: string
+/** 表单里只有过期时间不进本地存储：它是绝对时间点，存下来下次打开就成了过去 */
+interface ExpiryState {
   date: string
   time: string
-  method: OneNetMethod
-  wifiSsid: string
-  wifiPassword: string
-  tempId: string
-  tempValue: string
-  humiId: string
-  humiValue: string
 }
 
-const INITIAL: FormState = {
-  productId: '',
-  deviceId: '',
-  deviceKey: '',
-  date: '',
-  time: '',
-  method: 'sha1',
-  wifiSsid: '',
-  wifiPassword: '',
-  tempId: 'temperature',
-  tempValue: '25.6',
-  humiId: 'humidity',
-  humiValue: '60.2',
-}
+const EMPTY_EXPIRY: ExpiryState = { date: '', time: '' }
 
 export function OneNetMqtt() {
   const t = useTranslations('OneNet')
 
-  const [form, setForm] = useState<FormState>(INITIAL)
+  /** 非敏感以外的全部字段都存在本地：SSR/hydration 走服务端快照，客户端自动切成真实值 */
+  const form = useSyncExternalStore(
+    onenetStore.subscribe,
+    onenetStore.getSnapshot,
+    onenetStore.getServerSnapshot,
+  )
+  const [expiry, setExpiry] = useState<ExpiryState>(EMPTY_EXPIRY)
   const [result, setResult] = useState<OneNetBuild | null>(null)
   const [blocks, setBlocks] = useState<AtBlock[] | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const set = (key: keyof FormState) => (event: ChangeEvent<HTMLInputElement>) =>
-    setForm(previous => ({ ...previous, [key]: event.target.value }))
+  const set = (key: keyof OneNetFormState) => (event: ChangeEvent<HTMLInputElement>) =>
+    onenetStore.update({ [key]: event.target.value })
 
   /**
    * 用户填了日期/时间才是「明确的过期时间」；没填就按点击时的「现在 + 30 天」算，
    *  这样渲染结果与时间无关，SSG 出来的 HTML 不会和客户端算出不同的值。
    */
   const explicitExpiry = useMemo(
-    () => dateTimeToTimestamp(form.date, form.time),
-    [form.date, form.time],
+    () => dateTimeToTimestamp(expiry.date, expiry.time),
+    [expiry.date, expiry.time],
   )
 
   const topicLabels: Record<string, string> = {
@@ -159,14 +145,14 @@ export function OneNetMqtt() {
   }
 
   function handleReset() {
-    setForm(INITIAL)
+    onenetStore.reset()
     setResult(null)
     setBlocks(null)
   }
 
   function applyPreset(days: number) {
     const next = timestampToDateTime(expiryFromNow(days))
-    setForm(previous => ({ ...previous, date: next.date, time: next.time }))
+    setExpiry({ date: next.date, time: next.time })
   }
 
   return (
@@ -231,7 +217,7 @@ export function OneNetMqtt() {
                       size="xs"
                       variant={form.method === method ? 'default' : 'outline'}
                       className="font-mono"
-                      onClick={() => setForm(previous => ({ ...previous, method }))}
+                      onClick={() => onenetStore.update({ method })}
                     >
                       {method}
                     </Button>
@@ -246,14 +232,14 @@ export function OneNetMqtt() {
                   <Input
                     type="date"
                     className="font-mono text-xs"
-                    value={form.date}
-                    onChange={set('date')}
+                    value={expiry.date}
+                    onChange={event => setExpiry(previous => ({ ...previous, date: event.target.value }))}
                   />
                   <Input
                     type="time"
                     className="font-mono text-xs"
-                    value={form.time}
-                    onChange={set('time')}
+                    value={expiry.time}
+                    onChange={event => setExpiry(previous => ({ ...previous, time: event.target.value }))}
                   />
                 </div>
                 <div className="flex flex-wrap items-center gap-1">

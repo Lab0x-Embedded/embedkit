@@ -78,7 +78,10 @@ public/preview.png           README 里的首页预览图
    现有例子 `pin-lookup` → PinAtlas：URL 拼装全在 `core/pinatlas.ts`，
    **纯函数 + 单测**，别把拼接逻辑写进组件。
 3. **不做假入口**：没实现的工具在首页是灰色禁用卡并标注「规划中」，不给点了报错的按钮；只有 `'done'` 才会进 sitemap。
-4. **纯本地计算**：工具页不发任何请求；敏感输入（密钥等）只留在内存里，不写 localStorage。
+4. **纯本地计算**：工具页不发任何请求，输入不上传。
+   注意「不写 localStorage」**不是**全局约定 —— 各工具自己决定，目前：
+   串口助手（配置与快捷指令）、OneNET（**含设备密钥与 WiFi 密码**）会写本地存储。
+   所以写了存储的工具，页面上**必须写明**并给「重置」入口，别让文案撒谎。
 5. **文案进 messages**：组件里不写死中英文；测试也从 `messages/zh.json` 取断言值，改文案不会让测试变红。
 
 **依赖原则：能用成熟库就不自己写。** 已经这样用起来的：`js-crc`（CRC 模型目录，187 个模型来自 reveng catalogue）、`ansi_up`（ANSI 转义）、Web Crypto（OneNET HMAC，不引 crypto-js）、BigInt（进制与位运算）。
