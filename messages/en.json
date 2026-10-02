@@ -161,6 +161,7 @@
     "statusOpen": "Connected",
     "statusClosed": "Disconnected",
     "open": "Open port",
+    "openHint": "Port selected — press “Open port” to start.",
     "close": "Close port",
     "opening": "Opening…",
     "settings": "Port settings",

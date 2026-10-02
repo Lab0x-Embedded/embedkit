@@ -245,6 +245,68 @@ describe('serialMonitor · 连接与收发', () => {
   })
 })
 
+describe('serialMonitor · 连接栏', () => {
+  it('选好端口但还没打开时，明确提示「还差打开这一步」', async () => {
+    installSerial([port])
+    renderMonitor()
+    // 一开始没选端口，不该出现这个提示
+    expect(bodyText()).not.toContain(t.openHint)
+
+    fireEvent.click(screen.getByRole('button', { name: t.reusePort }))
+    expect(await screen.findByText('USB 1A86:7523')).toBeTruthy()
+    expect(bodyText()).toContain(t.openHint)
+  })
+
+  it('打开之后提示消失，状态变成已连接', async () => {
+    installSerial([port])
+    renderMonitor()
+    await openPort()
+
+    expect(bodyText()).not.toContain(t.openHint)
+    expect(bodyText()).toContain(t.statusOpen)
+  })
+
+  it('断开后提示回来（状态回到未打开、端口还在）', async () => {
+    installSerial([port])
+    renderMonitor()
+    await openPort()
+
+    fireEvent.click(screen.getByRole('button', { name: t.close }))
+    await screen.findByText(t.statusIdle)
+    expect(bodyText()).toContain(t.openHint)
+  })
+
+  it('未打开时状态胶囊是中性灰，没有绿色高亮', () => {
+    installSerial([port])
+    renderMonitor()
+    const pill = screen.getByText(t.statusIdle).parentElement
+    expect(pill?.className).toContain('bg-muted')
+    expect(pill?.className).not.toContain('emerald')
+  })
+
+  it('打开后状态胶囊变绿高亮（连上了要一眼看得出来）', async () => {
+    installSerial([port])
+    renderMonitor()
+    await openPort()
+
+    const pill = screen.getByText(t.statusOpen).parentElement
+    expect(pill?.className).toContain('emerald')
+    // 圆点带脉冲，进一步提示「正在通信」
+    expect(pill?.querySelector('span')?.className).toContain('animate-pulse')
+  })
+
+  it('「选择串口 / 复用 / 打开」三个按钮在同一个容器里', () => {
+    installSerial([port])
+    renderMonitor()
+
+    const select = screen.getByRole('button', { name: t.selectPort })
+    const open = screen.getByRole('button', { name: t.open })
+    // 之前「打开串口」被 5 个参数下拉隔到最右边，选完端口的人找不到它；
+    // 这条断言把这个布局钉住，防止改回去
+    expect(select.closest('.flex')?.contains(open)).toBe(true)
+  })
+})
+
 describe('serialMonitor · 配置留存', () => {
   it('切换显示模式会写进 localStorage，刷新后仍生效', () => {
     installSerial([port])

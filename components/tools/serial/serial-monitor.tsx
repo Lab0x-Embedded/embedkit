@@ -9,7 +9,6 @@ import { Download, FolderOpen, Plus, RefreshCw, Send, Trash2, Upload, X } from '
 import { useTranslations } from 'next-intl'
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -454,10 +453,10 @@ export function SerialMonitor() {
     setTotalEntries(0)
   }, [])
 
-  const statusBadge = {
-    idle: { label: t('statusIdle'), variant: 'outline' as const },
-    open: { label: t('statusOpen'), variant: 'default' as const },
-    closed: { label: t('statusClosed'), variant: 'destructive' as const },
+  const statusLabel = {
+    idle: t('statusIdle'),
+    open: t('statusOpen'),
+    closed: t('statusClosed'),
   }[status]
 
   const dropped = Math.max(0, totalEntries - entries.length)
@@ -472,133 +471,165 @@ export function SerialMonitor() {
 
       {/* 连接栏：重要入口放最上面 */}
       <Card>
-        <CardContent className="flex flex-wrap items-end gap-x-4 gap-y-3 pt-6">
-          <div className="space-y-2">
-            <Label>{t('port')}</Label>
-            <div className="flex items-center gap-2">
-              <Badge variant={statusBadge.variant} className="rounded-4xl">
-                {statusBadge.label}
-              </Badge>
-              <span className="font-mono text-xs text-muted-foreground">
-                {portLabel || t('noPort')}
-              </span>
+        {/* 注意别在这加 pt-*：Card 自带 py-(--card-spacing)，再叠加会让顶部多出一截空白 */}
+        <CardContent className="space-y-4">
+          {/*
+            第一行：端口状态 + 全部串口操作。
+            选择 / 复用 / 打开这三个按钮必须挨在一起 —— 之前「打开串口」被 5 个参数
+            下拉隔到了最右边，选完端口的人根本不知道该再点它。
+          */}
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+            <div className="space-y-2">
+              <Label>{t('port')}</Label>
+              {/* 状态做成带彩色圆点的胶囊：连上了要一眼能看出来 */}
+              <div
+                className={cn(
+                  'flex items-center gap-2 rounded-lg border px-3 py-1.5',
+                  status === 'open' && 'border-emerald-600/30 bg-emerald-500/10',
+                  status === 'closed' && 'border-destructive/30 bg-destructive/5',
+                  status === 'idle' && 'border-border/70 bg-muted/40',
+                )}
+              >
+                <span
+                  className={cn(
+                    'size-2 shrink-0 rounded-full',
+                    status === 'open' && 'bg-emerald-500 motion-safe:animate-pulse',
+                    status === 'closed' && 'bg-destructive',
+                    status === 'idle' && 'bg-muted-foreground/50',
+                  )}
+                />
+                <span className="text-sm font-medium">{statusLabel}</span>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {portLabel || t('noPort')}
+                </span>
+              </div>
             </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" disabled={!supported || busy} onClick={handleSelectPort}>
+                <FolderOpen className="size-4" />
+                {t('selectPort')}
+              </Button>
+              <Button variant="ghost" size="sm" disabled={!supported || busy} onClick={handleReusePort}>
+                <RefreshCw className="size-4" />
+                {t('reusePort')}
+              </Button>
+              <Button
+                size="sm"
+                variant={status === 'open' ? 'outline' : 'default'}
+                disabled={!supported || !portLabel || busy}
+                onClick={status === 'open' ? () => void teardown(true) : handleOpen}
+              >
+                {busy ? t('opening') : status === 'open' ? t('close') : t('open')}
+              </Button>
+            </div>
+
+            {/* 选好端口但还没打开：把「还差一步」直接说出来 */}
+            {portLabel && status === 'idle' && !busy && (
+              <p className="pb-1.5 text-xs text-muted-foreground">{t('openHint')}</p>
+            )}
           </div>
 
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={!supported || busy} onClick={handleSelectPort}>
-              <FolderOpen className="size-4" />
-              {t('selectPort')}
-            </Button>
-            <Button variant="ghost" size="sm" disabled={!supported || busy} onClick={handleReusePort}>
-              <RefreshCw className="size-4" />
-              {t('reusePort')}
-            </Button>
+          <Separator />
+
+          {/* 第二行：串口参数 */}
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="serial-baud">{t('baudRate')}</Label>
+              <Select
+                value={String(state.settings.baudRate)}
+                onValueChange={value => void handleSettingChange({ baudRate: Number(value) })}
+              >
+                <SelectTrigger id="serial-baud" className="w-32 font-mono text-xs" disabled={!supported}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {BAUD_RATES.map(rate => (
+                    <SelectItem key={rate} value={String(rate)} className="font-mono text-xs">
+                      {rate}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="serial-data">{t('dataBits')}</Label>
+              <Select
+                value={String(state.settings.dataBits)}
+                onValueChange={value => void handleSettingChange({ dataBits: Number(value) as 7 | 8 })}
+              >
+                <SelectTrigger id="serial-data" className="w-20 font-mono text-xs" disabled={!supported}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DATA_BITS.map(bits => (
+                    <SelectItem key={bits} value={String(bits)} className="font-mono text-xs">
+                      {bits}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="serial-stop">{t('stopBits')}</Label>
+              <Select
+                value={String(state.settings.stopBits)}
+                onValueChange={value => void handleSettingChange({ stopBits: Number(value) as 1 | 2 })}
+              >
+                <SelectTrigger id="serial-stop" className="w-20 font-mono text-xs" disabled={!supported}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STOP_BITS.map(bits => (
+                    <SelectItem key={bits} value={String(bits)} className="font-mono text-xs">
+                      {bits}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="serial-parity">{t('parity')}</Label>
+              <Select
+                value={state.settings.parity}
+                onValueChange={value => void handleSettingChange({ parity: value as SerialParity })}
+              >
+                <SelectTrigger id="serial-parity" className="w-24 text-xs" disabled={!supported}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PARITIES.map(parity => (
+                    <SelectItem key={parity} value={parity} className="text-xs">
+                      {parity === 'none' ? t('parityNone') : parity === 'even' ? t('parityEven') : t('parityOdd')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="serial-flow">{t('flowControl')}</Label>
+              <Select
+                value={state.settings.flowControl}
+                onValueChange={value => void handleSettingChange({ flowControl: value as SerialFlowControl })}
+              >
+                <SelectTrigger id="serial-flow" className="w-24 text-xs" disabled={!supported}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FLOW_CONTROLS.map(flow => (
+                    <SelectItem key={flow} value={flow} className="text-xs">
+                      {flow === 'none' ? t('flowNone') : t('flowHardware')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
           </div>
-
-          <Separator orientation="vertical" className="hidden h-9 sm:block" />
-
-          <div className="space-y-2">
-            <Label htmlFor="serial-baud">{t('baudRate')}</Label>
-            <Select
-              value={String(state.settings.baudRate)}
-              onValueChange={value => void handleSettingChange({ baudRate: Number(value) })}
-            >
-              <SelectTrigger id="serial-baud" className="w-32 font-mono text-xs" disabled={!supported}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {BAUD_RATES.map(rate => (
-                  <SelectItem key={rate} value={String(rate)} className="font-mono text-xs">
-                    {rate}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="serial-data">{t('dataBits')}</Label>
-            <Select
-              value={String(state.settings.dataBits)}
-              onValueChange={value => void handleSettingChange({ dataBits: Number(value) as 7 | 8 })}
-            >
-              <SelectTrigger id="serial-data" className="w-20 font-mono text-xs" disabled={!supported}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {DATA_BITS.map(bits => (
-                  <SelectItem key={bits} value={String(bits)} className="font-mono text-xs">
-                    {bits}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="serial-stop">{t('stopBits')}</Label>
-            <Select
-              value={String(state.settings.stopBits)}
-              onValueChange={value => void handleSettingChange({ stopBits: Number(value) as 1 | 2 })}
-            >
-              <SelectTrigger id="serial-stop" className="w-20 font-mono text-xs" disabled={!supported}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STOP_BITS.map(bits => (
-                  <SelectItem key={bits} value={String(bits)} className="font-mono text-xs">
-                    {bits}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="serial-parity">{t('parity')}</Label>
-            <Select
-              value={state.settings.parity}
-              onValueChange={value => void handleSettingChange({ parity: value as SerialParity })}
-            >
-              <SelectTrigger id="serial-parity" className="w-24 text-xs" disabled={!supported}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PARITIES.map(parity => (
-                  <SelectItem key={parity} value={parity} className="text-xs">
-                    {parity === 'none' ? t('parityNone') : parity === 'even' ? t('parityEven') : t('parityOdd')}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="serial-flow">{t('flowControl')}</Label>
-            <Select
-              value={state.settings.flowControl}
-              onValueChange={value => void handleSettingChange({ flowControl: value as SerialFlowControl })}
-            >
-              <SelectTrigger id="serial-flow" className="w-24 text-xs" disabled={!supported}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {FLOW_CONTROLS.map(flow => (
-                  <SelectItem key={flow} value={flow} className="text-xs">
-                    {flow === 'none' ? t('flowNone') : t('flowHardware')}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            disabled={!supported || !portLabel || busy}
-            onClick={status === 'open' ? () => void teardown(true) : handleOpen}
-          >
-            {busy ? t('opening') : status === 'open' ? t('close') : t('open')}
-          </Button>
         </CardContent>
       </Card>
 

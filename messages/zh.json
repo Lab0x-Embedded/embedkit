@@ -161,6 +161,7 @@
     "statusOpen": "已连接",
     "statusClosed": "已断开",
     "open": "打开串口",
+    "openHint": "端口已选好，点右边「打开串口」开始。",
     "close": "关闭串口",
     "opening": "打开中…",
     "settings": "串口参数",
