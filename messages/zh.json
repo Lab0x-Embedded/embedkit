@@ -41,7 +41,7 @@
     },
     "crc": {
       "name": "CRC 计算器",
-      "desc": "通用参数模型（多项式 / 初值 / 反转 / 异或输出）与常用预设：CRC-8/16/32、CCITT、Modbus、CAN。"
+      "desc": "24 个预设（CRC-8/16/32/32C/64、Modbus、CCITT…）+ 自定义参数与整帧 CRC 校验。"
     },
     "bitfield": {
       "name": "位域 / 寄存器可视化",
@@ -53,11 +53,11 @@
     },
     "onenet-mqtt": {
       "name": "OneNET MQTT 参数生成",
-      "desc": "输入产品与设备信息，生成 MQTT 三元组签名、物模型 Topic 与可直接跑通的 ESP-AT 指令序列。"
+      "desc": "生成 MQTT 三元组签名、物模型 Topic 与可直接运行的 ESP-AT 指令序列。"
     },
     "serial": {
       "name": "串口监视器",
-      "desc": "浏览器直连串口（Web Serial）：收发数据、HEX / 文本 / ANSI 彩色显示、分包合并、快捷指令与自动重连。"
+      "desc": "浏览器直连串口：HEX / 文本 / ANSI 日志、分包合并、快捷指令与自动重连。"
     },
     "modbus-frame": {
       "name": "Modbus 报文生成与校验",
@@ -65,7 +65,7 @@
     },
     "pin-lookup": {
       "name": "芯片引脚查询",
-      "desc": "填型号（可带引脚 / 封装）跳转到 PinAtlas，看封装引脚图、复用功能与 AF 号 —— 数据在隔壁站点，本站只做入口。"
+      "desc": "填型号跳转到 PinAtlas，查封装引脚图、复用功能与 AF 号 —— 数据在隔壁站点。"
     }
   },
   "Radix": {

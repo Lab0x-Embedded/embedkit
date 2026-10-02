@@ -41,7 +41,7 @@
     },
     "crc": {
       "name": "CRC Calculator",
-      "desc": "Generic parameter model (poly / init / reflect / xor-out) with presets: CRC-8/16/32, CCITT, Modbus, CAN."
+      "desc": "24 presets (CRC-8/16/32/32C/64, Modbus, CCITT…) plus custom parameters and whole-frame CRC checks."
     },
     "bitfield": {
       "name": "Bitfield / Register Viewer",
@@ -53,11 +53,11 @@
     },
     "onenet-mqtt": {
       "name": "OneNET MQTT Credentials",
-      "desc": "Turn product and device info into an MQTT credential triplet, thing-model topics and a ready-to-paste ESP-AT command sequence."
+      "desc": "Generate the MQTT credential triplet, thing-model topics and runnable ESP-AT commands."
     },
     "serial": {
       "name": "Web Serial Monitor",
-      "desc": "Talk to a serial port straight from the browser (Web Serial): send/receive, HEX / text / ANSI colour log, packet merging, quick commands and auto-reconnect."
+      "desc": "Talk to a serial port from the browser: HEX / text / ANSI logs, packet merging, quick commands, auto-reconnect."
     },
     "modbus-frame": {
       "name": "Modbus Frame Builder",
@@ -65,7 +65,7 @@
     },
     "pin-lookup": {
       "name": "Chip Pin Lookup",
-      "desc": "Enter a part number (optionally a pin / package) and jump to PinAtlas for the package pinout, alternate functions and AF numbers — the data lives on the other site, this is just the doorway."
+      "desc": "Enter a part number and jump to PinAtlas for the pinout, alternate functions and AF numbers."
     }
   },
   "Radix": {
