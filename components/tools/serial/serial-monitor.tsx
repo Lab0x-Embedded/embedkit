@@ -481,10 +481,14 @@ export function SerialMonitor() {
           <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
             <div className="space-y-2">
               <Label>{t('port')}</Label>
-              {/* 状态做成带彩色圆点的胶囊：连上了要一眼能看出来 */}
+              {/*
+                高度写死 h-7，和右侧 size="sm" 的按钮一致。
+                用 py-* 撑出来的高度会随字号与行高变化（py-1.5 + text-sm 会到 34px），
+                结果比 28px 的按钮高一截，同一行看着不齐。
+              */}
               <div
                 className={cn(
-                  'flex items-center gap-2 rounded-lg border px-3 py-1.5',
+                  'flex h-7 items-center gap-2 rounded-lg border px-2.5',
                   status === 'open' && 'border-emerald-600/30 bg-emerald-500/10',
                   status === 'closed' && 'border-destructive/30 bg-destructive/5',
                   status === 'idle' && 'border-border/70 bg-muted/40',

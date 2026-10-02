@@ -276,6 +276,19 @@ describe('serialMonitor · 连接栏', () => {
     expect(bodyText()).toContain(t.openHint)
   })
 
+  it('状态胶囊与右侧按钮等高（不会一个高一个矮）', () => {
+    installSerial([port])
+    renderMonitor()
+
+    const pill = screen.getByText(t.statusIdle).parentElement
+    const open = screen.getByRole('button', { name: t.open })
+    // 胶囊曾经用 py-1.5 + text-sm 撑到 34px，而按钮是 h-7 = 28px，同一行不齐。
+    // 两边都钉在 h-7 上，谁改成 padding 撑高这条就红。
+    expect(pill?.className).toContain('h-7')
+    expect(pill?.className).not.toMatch(/\bpy-/)
+    expect(open.className).toContain('h-7')
+  })
+
   it('未打开时状态胶囊是中性灰，没有绿色高亮', () => {
     installSerial([port])
     renderMonitor()
