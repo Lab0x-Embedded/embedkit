@@ -166,8 +166,18 @@ pnpm build          # next build（注意坑 2、坑 3）
 **测试覆盖**
 
 - `base-converter` 与 `onenet-mqtt` **没有组件测试**（其余 6 个都有）。`onenet-mqtt` 组件 400+ 行，最值得补。
-- **没有 E2E / 冒烟测试**。路由可达性、404、重定向、sitemap 目前靠人工 `curl` 验证，验完就没了。
 - CI 配置齐全，但**从未在 GitHub 上确认跑绿过**（本机 `gh` 未认证）。
+
+**明确不做（是决定，不是遗漏 —— 别再「顺手补上」）**
+
+- **E2E / Playwright**：已有 319 条单测 + 组件测试打底，E2E 的收益（浏览器里跑真实交互）
+  抵不过它的代价（几百 MB 浏览器二进制、CI 多一步、跑起来比 vitest 慢一个量级）。
+  **除非出现「单测绿但线上坏」的真实事故，否则不引入。**
+  代价是这些只能在改动后手工验一遍、验完不留痕：路由可达性、404 是否走站内页、
+  `/` 与 `/fr` 的重定向、sitemap 收录、canonical / hreflang、planned 卡片不可点。
+  改动这几处时**务必手工 `curl` 一遍**（`pnpm dev` 起着就能验）。
+- **`opengraph-image`**：分享到社交平台没有预览图（og:title / og:description 是有的）。
+  原始计划里标的就是「可选」。
 
 **与原始计划的差异 / 空头承诺**
 
@@ -175,7 +185,6 @@ pnpm build          # next build（注意坑 2、坑 3）
 
 - **页头没有工具导航**。计划说「首页卡片、导航、sitemap、搜索全部派生自 tools-meta」，实际只有卡片和 sitemap 派生；导航与搜索从未实现（`site-header.tsx` 只有 GitHub / 语言 / 主题）。要么补做，要么别再声称。
 - **CRC 比计划少两个能力**：预设里没有 CAN；没有文件输入（计划写的是「输入 HEX / ASCII / 文件」）。24 个预设都是常规的。
-- **没有 `opengraph-image`**：分享到社交平台没有预览图（og:title / og:description 是有的）。计划里标的是「可选」。
 - **`tools-meta` 没有计划里的 `keywords` / `needsBackend` 字段**，实际加的是 `needsLocalRuntime`（浏览器+硬件能力，语义不同）和 `externalUrl`。
 
 **其他**
@@ -205,8 +214,9 @@ pnpm build          # next build（注意坑 2、坑 3）
 **已外链的**：芯片引脚查询 → PinAtlas（`core/pinatlas.ts`）。这类「隔壁已经有且维护得不错」
 的能力一律走 `ext` 外链，不要在本站重建一份数据。
 
-**开工顺序建议**：先还「已知的债」——组件测试（`base-converter` / `onenet-mqtt`）→ E2E 冒烟
-→ 再决定页头导航补不补。**现在每加一个工具都是纯手工回归**，债还完再开新工具更划算。
+**开工顺序建议**：先补 `base-converter` / `onenet-mqtt` 的组件测试（唯一还没打底的测试欠账），
+再决定页头导航补不补（那是唯一的空头承诺）。**E2E 已决定不做**，别顺手引入。
+`opengraph-image` 想做就做，优先级低。
 
 ---
 
