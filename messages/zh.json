@@ -47,6 +47,10 @@
       "name": "位域 / 寄存器可视化",
       "desc": "逐位查看寄存器，点击置位 / 清零 / 取反，同步输出 HEX 与 C 宏。"
     },
+    "unit-converter": {
+      "name": "单位换算",
+      "desc": "频率周期、存储容量、通信速率、电压电流与 ADC 原始值，嵌入式常用单位一站式换算。"
+    },
     "hex-ascii": {
       "name": "HEX ↔ ASCII / C 数组",
       "desc": "十六进制与文本互转，一键生成可粘贴回读的 uint8_t 数组。"
@@ -73,6 +77,43 @@
     "dec": "十进制",
     "bin": "二进制",
     "oct": "八进制"
+  },
+  "UnitConverter": {
+    "freqTitle": "频率 ↔ 周期",
+    "freqLead": "输入任意一边，另一边按 T = 1/f 实时算出。定时器节拍、波特率时钟、采样率换算都够用。",
+    "freqGroup": "频率",
+    "periodGroup": "周期 T = 1/f",
+    "storageTitle": "存储容量",
+    "storageLead": "嵌入式内存与 Flash 严格按 1024 进制：1 KB = 1024 B = 8192 bit。",
+    "storageNote": "注意口径：硬盘、U 盘与网速的标称值按 1000 进制，标称 128 GB 的盘在系统里约 119 GB。",
+    "rateTitle": "通信速率",
+    "rateLead": "bit 类单位严格按 1000 进制，bit 与 Byte 相差 8 倍：1 KB/s = 8 kbps。",
+    "ratePresets": "常用波特率",
+    "rateNote": "串口 115200 bps ≈ 14400 B/s；100 Mbps 网口理论上限 12.5 MB/s。",
+    "electricTitle": "电压 / 电流",
+    "electricLead": "V / mV / μV 与 A / mA / μA 的 1000 进制阶梯，按所选单位只显示同量纲的结果。",
+    "adcTitle": "ADC 原始值 ↔ 电压",
+    "adcLead": "满量程按 V = raw ÷ (2ⁿ − 1) × Vref 映射，与 STM32 参考手册一致。",
+    "adcVref": "参考电压 Vref（V）",
+    "adcBits": "分辨率（位）",
+    "adcRawSection": "原始值 → 电压",
+    "adcRawLabel": "原始值（DEC）",
+    "adcVoltageSection": "电压 → 原始值",
+    "adcVoltageLabel": "电压（V）",
+    "adcCodeDec": "码值（DEC）",
+    "adcCodeHex": "码值（HEX）",
+    "adcCodeExact": "理论码值",
+    "inputLabel": "数值",
+    "emptyHint": "输入一个数字，结果实时更新。",
+    "errorInvalid": "请输入合法的数字。",
+    "errorPositive": "这个换算要做除法，数值必须大于 0。",
+    "errorNegative": "容量和速率不能是负数。",
+    "adcRawRange": "原始值要落在 0 到 {max} 之间。",
+    "copy": "复制",
+    "copied": "已复制",
+    "radixTitle": "进制转换",
+    "radixText": "HEX / DEC / BIN / OCT 互转、补码与字节序视图在进制转换工具里，支持 BigInt 大数。",
+    "radixLink": "打开进制转换"
   },
   "OneNet": {
     "lead": "填设备信息 → 生成三元组签名 → 再生成能直接粘进串口的 AT 指令。全部在浏览器本地计算。",

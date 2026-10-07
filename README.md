@@ -9,13 +9,14 @@
 
 ## 工具清单
 
-七个本地工具全部可用，另有一个跳转到 PinAtlas 的外部入口。
+八个本地工具全部可用，另有一个跳转到 PinAtlas 的外部入口。
 
 | 分类 | 工具 | 说明 |
 | --- | --- | --- |
 | 计算 / 数值 | **进制转换** `/tools/base-converter` | 2 / 8 / 10 / 16 互转，BigInt 大数、位宽补码解释、大小端字节序视图 |
 | 计算 / 数值 | **CRC 计算器** `/tools/crc` | 24 个预设（CRC-8/16/32/32C/64，Modbus、CCITT、AUTOSAR、Castagnoli…）+ 自定义 poly / init / refin / refout / xorout；HEX 模式下粘贴整帧还会校验尾部 CRC |
 | 计算 / 数值 | **位域 / 寄存器可视化** `/tools/bitfield` | 8 / 16 / 32 / 64 位网格，点击置位 / 清零 / 取反，字段切片并导出 C 宏 |
+| 计算 / 数值 | **单位换算** `/tools/unit-converter` | 频率 ↔ 周期（T = 1/f）、存储容量（严格 1024 进制）、通信速率（1000 进制 + bit/Byte ×8）、电压 / 电流阶梯、ADC 原始值 ↔ 电压（Vref / 分辨率可调） |
 | 字节流 / 编码 | **HEX ↔ ASCII / C 数组** `/tools/hex-ascii` | 文本 / HEX / C 数组三向互转，UTF-8 与 Latin-1，生成可回读的 `uint8_t` 数组与 xxd 风格 hexdump |
 | 协议 / 通信 | **Modbus 报文生成与校验** `/tools/modbus-frame` | 8 个常用功能码，RTU（自动补 CRC16）与 TCP（自动补 MBAP 头）；也能把收到的帧拆成字段并校验 CRC |
 | 协议 / 通信 | **串口监视器** `/tools/serial` | 浏览器直连串口（Web Serial）：HEX / 文本 / ANSI 彩色日志、分包合并、定时发送、快捷指令、拔插自动重连 |
@@ -32,7 +33,7 @@
 
 Next.js 16（App Router / Turbopack）· React 19 · TypeScript · Tailwind CSS v4 ·
 shadcn/ui（radix-nova 预设）· next-intl（中英双语）· @wrksz/themes ·
-js-crc（CRC 模型目录）· Vitest · pnpm
+js-crc（CRC 模型目录）· decimal.js（单位换算）· Vitest · pnpm
 
 ## 本地开发
 

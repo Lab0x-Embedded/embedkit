@@ -84,7 +84,7 @@ public/preview.png           README 里的首页预览图
    所以写了存储的工具，页面上**必须写明**并给「重置」入口，别让文案撒谎。
 5. **文案进 messages**：组件里不写死中英文；测试也从 `messages/zh.json` 取断言值，改文案不会让测试变红。
 
-**依赖原则：能用成熟库就不自己写。** 已经这样用起来的：`js-crc`（CRC 模型目录，187 个模型来自 reveng catalogue）、`ansi_up`（ANSI 转义）、Web Crypto（OneNET HMAC，不引 crypto-js）、BigInt（进制与位运算）。
+**依赖原则：能用成熟库就不自己写。** 已经这样用起来的：`js-crc`（CRC 模型目录，187 个模型来自 reveng catalogue）、`ansi_up`（ANSI 转义）、Web Crypto（OneNET HMAC，不引 crypto-js）、BigInt（进制与位运算）、`decimal.js`（单位换算的十进制运算，1/1e-9 这类除法在 double 里会掉尾巴）。
 反例教训：CRC 一开始是手写的，被指出后才换成 `js-crc` —— 手写意味着一份没人验证的参数表。
 
 ### OG 卡片图：改文案后**必须**重新生成字体
@@ -194,13 +194,13 @@ cd "$DST" && SWC_NATIVE_BINDING_CACHE=/private/tmp/swc-native ./node_modules/.bi
 ```bash
 pnpm lint           # eslint（@antfu/eslint-config）
 pnpm typecheck      # tsc --noEmit
-pnpm test           # vitest：20 个文件 / 379 用例
+pnpm test           # vitest：24 个文件 / 481 用例
 pnpm build          # next build（注意坑 2、坑 3）
 ```
 
 四条全绿才算完成。CI（`.github/workflows/ci.yml`）在 push / PR 上跑同样四条。
 
-测试分布：`lib/core/*.test.ts` 是纯函数（**边界与非法输入必测**），`components/tools/*/*.test.tsx` 是 happy-dom 组件测试（断言值从 `messages/zh.json` 取，不写死中文字面量）。**8 个工具都有组件测试**，另有页头导航与 i18n 的测试。
+测试分布：`lib/core/*.test.ts` 是纯函数（**边界与非法输入必测**），`components/tools/*/*.test.tsx` 是 happy-dom 组件测试（断言值从 `messages/zh.json` 取，不写死中文字面量）。**9 个工具都有组件测试**，另有页头导航与 i18n 的测试。
 
 写组件测试时的两个坑：
 
@@ -225,7 +225,7 @@ pnpm build          # next build（注意坑 2、坑 3）
 
 ## 五、当前进度
 
-**7 个本地工具全部可用**，另有 1 个外链入口（`ext` 分类），首页没有灰色占位卡。
+**8 个本地工具全部可用**，另有 1 个外链入口（`ext` 分类），首页没有灰色占位卡。
 
 工具分两类，统计口径不同：**本地工具**（功能在本站内完成）计入「N 个可用」；
 **外链工具**（`ToolMeta.externalUrl` 有值，功能在别的站点）单独计一个徽章，**不混进那个数字** ——
@@ -236,6 +236,7 @@ pnpm build          # next build（注意坑 2、坑 3）
 | calc | `base-converter` | 2/8/10/16 互转、补码、字节序 | `core/radix.ts` |
 | calc | `crc` | 24 预设 + 自定义参数 + 整帧校验 | `core/crc.ts`（包 `js-crc`） |
 | calc | `bitfield` | 8/16/32/64 位网格、字段切片、导出 C 宏 | `core/bitfield.ts`（复用 `radix.interpret`） |
+| calc | `unit-converter` | 频率↔周期、存储 1024、速率 1000×8、电压电流、ADC raw↔电压 | `core/units.ts`（`decimal.js`，数值不经过 Number） |
 | bytes | `hex-ascii` | 文本/HEX/C 数组三向、Latin-1、hexdump | `core/hexcodec.ts`（复用 `core/serial.ts`） |
 | proto | `modbus-frame` | 8 功能码、RTU/TCP 组帧 + 拆帧校验 | `core/modbus.ts`（CRC 复用 `core/crc.ts`） |
 | proto | `serial` | Web Serial 收发、分包合并、快捷指令 | `core/serial.ts` + `browser/serial.ts` |
@@ -278,7 +279,7 @@ pnpm build          # next build（注意坑 2、坑 3）
 
 ## 六、后续计划
 
-原始计划 16 个工具，**已上线 8 个**（v0.1 六个 + `serial` + `pin-lookup`）。剩下 8 个，按计划原本的分期列出（不要丢掉条目）：
+原始计划 16 个工具，**已上线 9 个**（v0.1 六个 + `serial` + `pin-lookup` + `unit-converter`）。剩下 7 个，按计划原本的分期列出（不要丢掉条目）：
 
 | 原计划阶段 | slug | 工具 |
 | --- | --- | --- |
@@ -286,7 +287,7 @@ pnpm build          # next build（注意坑 2、坑 3）
 | v0.2 | `checksum` | 校验和工厂（累加和 8/16、XOR、BCC、LRC；批量校验一帧里多处校验字段） |
 | v0.2 | `timer-calc` | STM32 定时器 / 波特率计算（PSC·ARR → 频率；USARTDIV/BRR 与误差百分比） |
 | v0.2 | `can-frame` | CAN 报文解析（标准/扩展帧、ID/IDE/RTR/DLC/Data 位域映射） |
-| v0.2 | `adc-calc` | ADC 换算（原始值 ↔ 电压 ↔ 物理量，分辨率/Vref/分压/两点校准） |
+| v0.2 | `adc-calc` | ADC 换算（原始值 ↔ 电压 ↔ 物理量，分辨率/Vref/分压/两点校准；**注意 `unit-converter` 已覆盖 raw ↔ 电压的基础部分，这里剩的是分压、两点校准与物理量换算**） |
 | v0.3 | `frame-builder` | 自定义协议帧构建器（帧头/长度/校验可配 + 生成 C 解析代码） |
 | v0.3 | `at-commands` | AT 指令速查与填空生成（ESP / 4G 模组） |
 | v0.3 | `reference` | 速查表（波特率误差表、CRC 参数表、编码表） |

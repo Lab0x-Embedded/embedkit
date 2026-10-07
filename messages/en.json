@@ -47,6 +47,10 @@
       "name": "Bitfield / Register Viewer",
       "desc": "Inspect a register bit by bit, toggle / set / clear, and emit HEX plus C macros."
     },
+    "unit-converter": {
+      "name": "Unit Converter",
+      "desc": "Frequency & period, storage, data rate, voltage/current and ADC codes — everyday embedded unit conversions in one place."
+    },
     "hex-ascii": {
       "name": "HEX ↔ ASCII / C array",
       "desc": "Convert between hex and text, and generate a round-trippable uint8_t array."
@@ -73,6 +77,43 @@
     "dec": "Decimal",
     "bin": "Binary",
     "oct": "Octal"
+  },
+  "UnitConverter": {
+    "freqTitle": "Frequency ↔ Period",
+    "freqLead": "Enter either side and the other is computed live from T = 1/f. Handy for timer ticks, baud clocks and sample rates.",
+    "freqGroup": "Frequency",
+    "periodGroup": "Period T = 1/f",
+    "storageTitle": "Storage Capacity",
+    "storageLead": "Embedded memory and flash are strictly binary: 1 KB = 1024 B = 8192 bit.",
+    "storageNote": "Mind the convention: drive and network labels are decimal (1000-based), so a 128 GB stick shows about 119 GB in the OS.",
+    "rateTitle": "Data Rate",
+    "rateLead": "Bit-based units are strictly decimal (1000-based), and bits differ from bytes by 8: 1 KB/s = 8 kbps.",
+    "ratePresets": "Common baud rates",
+    "rateNote": "115200 bps UART ≈ 14400 B/s; a 100 Mbps link caps at 12.5 MB/s.",
+    "electricTitle": "Voltage / Current",
+    "electricLead": "1000-based ladders for V / mV / μV and A / mA / μA; results show only the matching dimension.",
+    "adcTitle": "ADC Code ↔ Voltage",
+    "adcLead": "Full scale maps as V = code ÷ (2ⁿ − 1) × Vref, matching the STM32 reference manual.",
+    "adcVref": "Reference voltage Vref (V)",
+    "adcBits": "Resolution (bits)",
+    "adcRawSection": "Code → voltage",
+    "adcRawLabel": "Code (DEC)",
+    "adcVoltageSection": "Voltage → code",
+    "adcVoltageLabel": "Voltage (V)",
+    "adcCodeDec": "Code (DEC)",
+    "adcCodeHex": "Code (HEX)",
+    "adcCodeExact": "Exact code",
+    "inputLabel": "Value",
+    "emptyHint": "Type a number and results update live.",
+    "errorInvalid": "Enter a valid number.",
+    "errorPositive": "This conversion divides, so the value must be greater than 0.",
+    "errorNegative": "Capacity and data rate cannot be negative.",
+    "adcRawRange": "The code must be between 0 and {max}.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "radixTitle": "Number Base Conversion",
+    "radixText": "HEX / DEC / BIN / OCT conversion, two's complement and byte-order views live in the dedicated base converter, with BigInt support.",
+    "radixLink": "Open base converter"
   },
   "OneNet": {
     "lead": "Device info → credential triplet (signed token) → an ESP-AT command sequence you can paste into a serial console. All local to your browser.",

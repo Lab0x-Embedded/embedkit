@@ -60,13 +60,13 @@ describe('toolsNav · 触发器', () => {
 })
 
 describe('toolsNav · 菜单内容由 tools-meta 派生', () => {
-  it('8 个工具全部列出，顺序与 tools-meta 的分类顺序一致', () => {
+  it('9 个工具全部列出，顺序与 tools-meta 的分类顺序一致', () => {
     renderNav()
     openMenu()
 
     const expected = categories.flatMap(category => getToolsByCategory(category))
     expect(menuLinks()).toHaveLength(expected.length)
-    expect(expected).toHaveLength(8)
+    expect(expected).toHaveLength(9)
 
     // 菜单项的文本就是 messages 里的工具名，顺序必须一致
     expect(menuLinks().map(link => link.textContent)).toEqual(
